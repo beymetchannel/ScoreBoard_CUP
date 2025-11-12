@@ -1,0 +1,686 @@
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@600&display=swap');
+
+html, body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+body {
+  background-image: url('BackImage.png');
+  background-size: 100% 100%;
+  background-position: center; 
+  background-repeat: no-repeat; 
+ 
+  font-family: "Orbitron", "Segoe UI", sans-serif;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: row;
+  column-gap: 10px; 
+  height: calc(var(--vh, 1vh) * 100);
+}
+
+#overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0,0,0,0.6);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+  transition: opacity 0.5s ease;
+}
+
+#welcomeBoard {
+  color: #fff;
+  font-size: 2em;
+  text-align: center;
+  line-height: 1.5;
+  transition: opacity 0.5s ease;
+}
+
+#welcomeBoard span {
+  display: block;
+  font-size: 0.5em;
+  margin-top: 0.3em;
+}
+
+#optionOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(2px);
+  z-index: 500; 
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease, visibility 0.3s ease;
+}
+
+#optionOverlay.active {
+  display: block;
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+}
+
+
+
+
+.menu-container {
+  position: fixed;
+  top: 10px;
+  left: 10px;
+  z-index: 2000;
+}
+
+.menu-icon {
+  font-size: 32px;
+  color: #00ffff;
+  cursor: pointer;
+  text-shadow: 0 0 10px #00ffff;
+  user-select: none;
+}
+
+.menu-panel {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 180px;
+  height: 100vh;
+  background: rgba(0,0,0,0.9);
+  box-shadow: 4px 0 15px rgba(0,255,255,0.4);
+  transform: translateX(-100%);
+  transition: transform 0.3s ease;
+  display: flex;
+  flex-direction: column;
+  padding-top: 60px;
+  z-index: 1500;
+}
+
+.menu-panel.active { transform: translateX(0); }
+
+.menu-btn {
+  height: 36px;
+  background: rgba(0,255,255,0.15);
+  color: #00ffff;
+  border: none;
+  text-align: left;
+  padding: 0 15px;
+  font-size: 1em;
+  cursor: pointer;
+  transition: 0.3s;
+  font-family: "Orbitron", sans-serif;
+}
+.menu-btn:hover { background: rgba(0,255,255,0.3); }
+
+
+.submenu-panel {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  position: fixed;
+  top: 0;
+  left: 180px;
+  width: 300px;
+  height: calc(var(--vh, 1vh) * 100);
+  background: rgba(0,0,0,0.85);
+  box-shadow: 4px 0 15px rgba(0,255,255,0.3);
+  transform: translateX(-200%);
+  transition: transform 0.3s ease;
+  padding-top: 60px;
+  z-index: 1400;
+}
+
+.submenu-panel.active {
+  transform: translateX(0);
+}
+
+.blader-input-area {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 0 10px;
+}
+
+#bladerName {
+  width: 80%; 
+  height: 36px;
+  font-size: 1em;
+  border-radius: 6px;
+  border: none;
+  padding: 0 10px;
+  background: rgba(255,255,255,0.1);
+  color: #fff;
+}
+
+#addBlader {
+  height: 36px;
+  font-size: 0.9em;
+  border-radius: 4px;
+  border: none;
+  background: #00aaaa;
+  color: #fff;
+  font-family: "Orbitron", sans-serif;
+  cursor: pointer;
+  padding: 0 10px; 
+  width: auto;
+}
+#addBlader:hover { background: rgba(0,255,255,0.3); }
+
+
+.blader-list {
+  margin-top: 15px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 0 10px;
+}
+
+.blader-list,
+#dataBattleList,
+#resultBattleList { 
+  flex: 1;  
+  overflow-y: auto;
+}
+
+.blader-list::-webkit-scrollbar,
+#dataBattleList::-webkit-scrollbar,
+#resultBattleList::-webkit-scrollbar {
+  width: 6px;
+}
+.blader-list::-webkit-scrollbar-thumb,
+#dataBattleList::-webkit-scrollbar-thumb,
+#resultBattleList::-webkit-scrollbar-thumb {
+  background-color: rgba(255,255,255,0.3);
+  border-radius: 3px;
+}
+
+.blader-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-left: 10px;
+}
+
+.blader-item span {
+  font-size: 1em;
+  color: #fff;
+  display: inline-block;
+  max-width: 150px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.blader-item button {
+  height: 36px;
+  font-size: 0.9em;
+  border-radius: 4px;
+  border: none;
+  background: #ff5555;
+  color: #fff;
+  font-family: "Orbitron", sans-serif;
+  cursor: pointer;
+  padding: 0 10px;
+}
+.blader-item button:hover { background: rgba(0,255,255,0.3); }
+
+
+#resultSubmenu {
+  position: fixed;
+  top: 0;
+  left: 180px;
+  width: calc(100vw - 180px);
+  height: 100vh;
+  background: rgba(0,0,0,0.85);
+  box-shadow: 4px 0 15px rgba(0,255,255,0.3);
+  transform: translateX(-200%);
+  transition: transform 0.3s ease;
+  padding-top: 60px;
+  z-index: 1400;
+}
+
+#resultSubmenu.active {
+  transform: translateX(0);
+}
+
+
+.small-clear-btn {
+  position: fixed;
+  top: 10px;
+  right: 10px;
+  height: 36px;
+  font-size: 0.9em;
+  border-radius: 4px;
+  border: none;
+  background: #ff5555;
+  color: #fff;
+  font-family: "Orbitron", sans-serif;
+  cursor: pointer;
+  padding: 0 10px;
+  z-index: 2100; 
+}
+.small-clear-btn:hover {
+  background: rgba(0,255,255,0.3);
+}
+
+
+#resultBattleList .battleDataHeader,
+#resultBattleList .battleDataItem {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr;
+  gap: 5px;
+  align-items: center;
+}
+
+#resultBattleList .battleDataHeader span {
+  font-weight: bold;
+  color: #00ffff;
+  background: rgba(0,255,255,0.2);
+  padding: 5px 8px;
+  border-radius: 4px;
+  text-align: center;
+}
+
+#resultBattleList .battleDataItem span {
+  color: #fff;
+  background: rgba(0,0,0,0.3);
+  padding: 5px 8px;
+  border-radius: 4px;
+  text-align: center;
+}
+
+#resultBattleList .battleDataItem span:nth-child(1),
+#resultBattleList .battleDataHeader span:nth-child(1) {
+  text-align: left;
+  padding-left: 10px;
+  white-space: nowrap; 
+  overflow: hidden;     
+  text-overflow: ellipsis; 
+}
+
+
+
+.small-del-btn {
+  background-color: #ff4d4d;
+  font-family: "Orbitron", sans-serif;
+  border: none;
+  color: #fff;
+  font-size: 0.7rem;
+  padding: 2px 5px;
+  border-radius: 4px;
+  cursor: pointer;
+  justify-self: end;
+  height: 20px;
+}
+
+.small-del-btn:hover {
+  background-color: #ff1a1a;
+}
+
+.battleDataItem .small-del-btn {
+  justify-self: center; 
+  height: 20px;
+}
+
+
+
+.card {
+  position: relative;
+  width: 40%;
+  height: calc(100% - 10px);
+  border-radius: 12px;
+  cursor: pointer;
+  margin: 5px 0;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start; /* 上に揃える */
+  padding-top: 10px; /* 上の余白 */
+}
+
+.card .card-top {
+  position: relative; /* 上部に普通に配置 */
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  z-index: 1; /* スコアより前面 */
+}
+
+.card .score {
+  position: absolute;
+  bottom: 5px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 12em;
+  color: #fff;
+  text-shadow: 0 0 25px rgba(255,255,255,0.6);
+}
+
+.left-card {
+  background: linear-gradient(to right,
+    rgba(0, 51, 68, 0.3) 0%, 
+    rgba(0, 51, 68, 1.0) 90% 
+  );
+}
+
+.right-card {
+  background: linear-gradient(to left,
+    rgba(68, 0, 0, 0.3) 0%, 
+    rgba(68, 0, 0, 1.0) 90%
+  );
+}
+
+
+
+
+
+.score {
+  font-size: 12em;
+  font-weight: bold;
+  text-align: center;
+  color: #fff;
+  text-shadow: 0 0 25px rgba(255,255,255,0.6);
+  transition: 0.3s;
+}
+
+.battle-buttons {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between; 
+  height: 100%; /* 90vh; */
+  margin: 0;
+  padding-top: 10px; 
+  
+}
+
+#battleBtnWrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  flex-grow: 1;
+  gap: 2px;
+}
+
+.battle-btn {
+  width: 140px;
+  padding: 0 10px;
+  white-space: nowrap;
+  text-align: center;
+  height: 60px;
+  border: none;
+  border-radius: 8px;
+  background-color: rgba(0,0,0,0.8);
+  font-family: 'Orbitron', sans-serif;
+  font-size: 1.3em;
+  color: #ffffff;
+  text-shadow: 0 0 10px #ffffff;
+  cursor: pointer;
+  transition: 0.3s;
+  font-weight: bold;
+  box-shadow: 0 0 15px rgba(255,255,255,0.6);
+}
+.battle-btn:active { transform: scale(1.05); }
+
+.battle-btn.tab-left { background-color: #003344; border-radius: 0 12px 12px 0; transform: translateX(-25px); }
+.battle-btn.tab-right { background-color: #440000; border-radius: 12px 0 0 12px; transform: translateX(25px); }
+
+
+.battle-btn.no-glow {
+  box-shadow: none !important;
+}
+
+
+.battle-btn.spin {
+  color: #00eaff;
+  text-shadow: 0 0 8px #00eaff, 0 0 16px #00eaff;
+}
+
+.battle-btn.burst {
+  color: #ff8800;
+  text-shadow: 0 0 8px #ff8800, 0 0 16px #ff6600;
+}
+
+.battle-btn.over {
+  color: #99ff00;
+  text-shadow: 0 0 8px #99ff00, 0 0 16px #66ff00;
+}
+
+.battle-btn.xtreme {
+  color: #ae00ff;
+  text-shadow: 0 0 8px #ae00ff, 0 0 16px #ae00ff;
+}
+
+
+
+.reset-btn {
+  background-color: #222;
+  font-family: "Orbitron", sans-serif;
+  color: #ffcc00;
+  border-radius: 8px;
+  width: 140px;
+  height: 50px;
+  border: 2px solid #ffcc00;
+  font-size: 1em;
+  font-weight: bold;
+  cursor: pointer;
+  margin-top: 0px;
+  margin-bottom: 10px; 
+}
+.reset-btn:hover { background-color: #444; transform: scale(1.05); }
+
+.clear-btn {
+  background-color: #550000;
+  border: 2px solid #ff3333;
+  color: #fff;
+  width: 140px;
+  height: 50px;
+  border-radius: 10px;
+  font-size: 1em;
+  font-weight: bold;
+  text-shadow: 0 0 10px #ff5555;
+  cursor: pointer;
+}
+.clear-btn:hover { background-color: #770000; transform: scale(1.05); }
+
+
+.blader-select select {
+  font-family: "Orbitron", sans-serif;
+  font-size: 1em;
+  padding: 5px 10px;
+  border-radius: 6px;
+  border: none;
+  background: rgba(255,255,255,0.15);
+  color: #fff;
+  outline: none;
+  text-align: left;
+  margin-left: 10px;
+}
+
+.blader-select-area {
+  flex-direction: column; 
+  display: flex;
+  align-items: center;
+  gap: 5px;       
+  position: absolute;
+  top: 10px; 
+  width: auto;    
+}
+
+.blader-label {
+  display: inline-block;
+  height: 36px;
+  line-height: 36px;
+  color: #fff;
+  font-size: 1rem;
+  text-align: left;
+  flex-shrink: 0;
+  margin: 0;
+  padding: 0;
+  top: 0px; 
+}
+
+.blader-select {
+  flex-grow: 0;
+  width: 160px;            
+  height: 36px;
+  border-radius: 6px;
+  border: none;
+  font-size: 1em;
+  font-family: "Orbitron", sans-serif;
+  background: rgba(255,255,255,0.15);
+  color: #fff;
+  text-align: left;
+  cursor: pointer;
+  padding: 0 5px;
+  position: relative;
+  overflow: hidden;       
+  text-overflow: ellipsis;  
+  white-space: nowrap;     
+  top: 0px;
+}
+
+
+
+.blader-select option {
+  background: #222;
+  color: #fff;
+}
+
+.blader-select-container {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 8px;
+}
+
+.blader-select-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.clear-select-btn {
+  background: none;
+  border: none;
+  color: #fff;
+  font-weight: bold;
+  cursor: pointer;
+  font-size: 1rem;
+  line-height: 1;
+}
+
+
+
+
+
+
+#battleDataList {
+  padding: 10px;
+  overflow-y: auto;
+  max-height: 100vh;
+  display: flex;
+  flex-direction: column; 
+  gap: 5px;
+}
+
+
+.battleDataHeader {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr 40px;
+  font-size: 0.8rem;
+  gap: 5px;
+}
+
+.battleDataHeader span {
+  font-weight: bold;
+  color: #00ffff;
+  background: rgba(0,255,255,0.2);
+  padding: 5px 8px;
+  border-radius: 4px;
+  text-align: center;
+}
+.battleDataHeader span:last-child {
+  background: none; 
+  color: transparent; 
+  pointer-events: none; 
+}
+
+
+.battleDataItem {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr; /* Blader:Score:Time */
+  gap: 5px;
+}
+
+.battleDataItem span {
+  color: #fff;
+  background: rgba(0,0,0,0.3);
+  padding: 5px 8px;
+  border-radius: 4px;
+  font-size: 0.8rem;
+}
+
+
+.battleDataItem span:nth-child(1),
+.battleDataHeader span:nth-child(1) { text-align: left; padding-left: 10px; }
+.battleDataItem span:nth-child(2),
+.battleDataHeader span:nth-child(2) { text-align: center; }
+.battleDataItem span:nth-child(3),
+.battleDataHeader span:nth-child(3) { text-align: right; padding-right: 10px; }
+
+
+.battleDataItem span:nth-child(1) {
+  white-space: nowrap;    
+  overflow: hidden;    
+  text-overflow: ellipsis; 
+}
+
+.battle-options {
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  display: flex;
+  justify-content: space-between;
+  pointer-events: none;
+  z-index: 1000;
+}
+.option-group {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  width: 40%;
+  height: 90%;
+  pointer-events: all;
+  position: absolute;
+  top: 5%;
+}
+#leftOptions { left: 0; }
+#rightOptions { right: 0; }
+
+.option-btn {
+  width: 100%;
+  height: 100%;
+  border: none;
+  border-radius: 10px;
+  background-color: rgba(0,0,0,0.6);
+  background-size: cover;
+  background-position: center;
+  cursor: pointer;
+  opacity: 0.9;
+  transition: 0.2s;
+}
+.option-btn:hover { opacity: 1; }
+
+.hidden { display: none; }

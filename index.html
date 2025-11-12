@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="shortcuticon" type="image/x-icon" href="ScoreBoardIcon.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="ScoreBoardIcon.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="バトルスコア">
+  <title>バトルスコア</title>
+  <link rel="stylesheet" href="style.css">
+  <script defer src="script.js"></script>
+</head>
+<body>
+
+
+  <!-- ウェルカムボード -->
+  <div id="overlay">
+    <div id="welcomeBoard">
+      ScoreBoard<br>
+      <span>横向きにしてからタップして起動</span>
+      <span>Created by beymet</span>
+    </div>
+  </div>
+
+
+
+  <!-- ===== メニュー ===== -->
+  <div class="menu-container">
+    <div class="menu-icon" id="menuIcon">☰</div>
+  </div>
+
+  <div class="menu-panel" id="menuPanel">
+    <button class="menu-btn" id="bladerBtn">ブレーダー</button>
+    <button class="menu-btn" id="resultBtn">リザルト</button>
+    <button class="menu-btn" id="dataBtn">データ</button>
+  </div>
+
+  <div class="submenu-panel" id="bladerSubmenu">
+    <div class="blader-input-area">
+      <input type="text" id="bladerName" placeholder="ブレーダー名">
+      <button id="addBlader">Add</button>
+    </div>
+    <div class="blader-list" id="bladerList"></div>
+  </div>
+
+  <div class="submenu-panel" id="dataSubmenu">
+    <div id="dataBattleList" style="padding:10px; overflow-y:auto; max-height:100vh;"></div>
+  </div>
+
+  <div class="submenu-panel" id="resultSubmenu">
+    <button id="resultClearBtn" class="small-clear-btn">Clear</button>
+    <div id="resultBattleList"></div>
+  </div>
+
+  <!-- ===== カード類 ===== -->
+  <div class="card left-card" onclick="toggleBattleOptions(null,'L')">
+    <div class="blader-select-area" onclick="event.stopPropagation()">
+      <div class="blader-select-wrapper">
+        <!-- ブレーダー選択 -->
+        <select id="leftBlader" class="blader-select">
+          <option value="Blader A" selected>Blader A</option>
+        </select>
+        <!-- クリアボタン -->
+        <button class="clear-select-btn" data-side="L">×</button>
+      </div>
+      
+      <!-- ベイ選択ボックス -->
+      <div class="blader-select-wrapper" style="margin-top:5px;">
+        <select id="leftBay" class="blader-select">
+          <option value="Bay 1" selected>Bay 1</option>
+          <option value="Bay 2">Bay 2</option>
+        </select>
+        <button class="clear-select-btn" data-side="L" onclick="document.getElementById('leftBay').selectedIndex=0">×</button>
+      </div>
+    </div>
+    <div class="score" id="leftScore">0</div>
+  </div>
+
+
+
+  <div class="battle-buttons" id="battleButtons">
+    <div id="battleBtnWrapper">
+      <button class="battle-btn" id="battle1" onclick="toggleBattleOptions(1)">1st</button>
+    </div>
+    <button class="reset-btn" onclick="undoLastBattle()">Back</button>
+  </div>
+
+  <div class="card right-card" onclick="toggleBattleOptions(null,'R')">
+    <div class="blader-select-area" onclick="event.stopPropagation()">
+      <div class="blader-select-wrapper">
+        <select id="rightBlader" class="blader-select">
+          <option value="Blader B" selected>Blader B</option>
+        </select>
+        <button class="clear-select-btn" data-side="R">×</button>
+      </div>
+
+      <div class="blader-select-wrapper" style="margin-top:5px;">
+        <select id="rightBay" class="blader-select">
+          <option value="Bay 1" selected>Bay 1</option>
+          <option value="Bay 2">Bay 2</option>
+        </select>
+        <button class="clear-select-btn" data-side="R" onclick="document.getElementById('rightBay').selectedIndex=0">×</button>
+      </div>
+    </div>
+    <div class="score" id="rightScore">0</div>
+  </div>
+
+  <!-- ===== バトルオプション ===== -->
+  <div id="battleOptions" class="battle-options hidden">
+    <div class="option-group" id="leftOptions">
+      <button class="option-btn" style="background-image:url('SPIN1.png')" onclick="selectResult('L','SF')"></button>
+      <button class="option-btn" style="background-image:url('BURST1.png')" onclick="selectResult('L','BF')"></button>
+      <button class="option-btn" style="background-image:url('ORVER1.png')" onclick="selectResult('L','OF')"></button>
+      <button class="option-btn" style="background-image:url('XTREME1.png')" onclick="selectResult('L','XF')"></button>
+    </div>
+    <div class="option-group" id="rightOptions">
+      <button class="option-btn" style="background-image:url('SPIN1.png')" onclick="selectResult('R','SF')"></button>
+      <button class="option-btn" style="background-image:url('BURST1.png')" onclick="selectResult('R','BF')"></button>
+      <button class="option-btn" style="background-image:url('ORVER1.png')" onclick="selectResult('R','OF')"></button>
+      <button class="option-btn" style="background-image:url('XTREME1.png')" onclick="selectResult('R','XF')"></button>
+    </div>
+  </div>
+  <div id="optionOverlay"></div>
+</body>
+</html>

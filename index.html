@@ -103,6 +103,7 @@
       cursor: pointer;
       text-shadow: 0 0 10px #00ffff;
       user-select: none;
+      display: none;
     }
 
     .menu-panel {
@@ -362,6 +363,29 @@
       padding-top: 10px; /* 上の余白 */
     }
 
+    .card-bg-image {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      border-radius: 12px;
+      background-size: cover;
+      background-repeat: no-repeat;
+      opacity: 0.5;
+      z-index: 0;
+      pointer-events: none;
+      transition: opacity 1s ease;
+    }
+
+    .left-card .card-bg-image {
+      background-position: right;
+    }
+
+    .right-card .card-bg-image {
+      background-position: left;
+    }
+
     .card .card-top {
       position: relative; /* 上部に普通に配置 */
       display: flex;
@@ -378,6 +402,7 @@
       font-size: 12em;
       color: #fff;
       text-shadow: 0 0 25px rgba(255,255,255,0.6);
+      z-index: 10;
     }
 
     .left-card {
@@ -530,7 +555,8 @@
       gap: 5px;       
       position: absolute;
       top: 10px; 
-      width: auto;    
+      width: auto;
+      z-index: 10;    
     }
 
     .blader-label {
@@ -548,7 +574,7 @@
 
     .blader-select {
       flex-grow: 0;
-      width: 160px;            
+      width: 250px;            
       height: 36px;
       border-radius: 6px;
       border: none;
@@ -594,6 +620,7 @@
       cursor: pointer;
       font-size: 1rem;
       line-height: 1;
+      display: none; /* 非表示: clear-select-btn を隠す */
     }
 
 
@@ -733,6 +760,7 @@
 
   <!-- ===== カード類 ===== -->
   <div class="card left-card" onclick="toggleBattleOptions(null,'L')">
+    <div class="card-bg-image" id="leftCardBg"></div>
     <div class="blader-select-area" onclick="event.stopPropagation()">
       <div class="blader-select-wrapper">
         <!-- ブレーダー選択 -->
@@ -764,6 +792,7 @@
   </div>
 
   <div class="card right-card" onclick="toggleBattleOptions(null,'R')">
+    <div class="card-bg-image" id="rightCardBg"></div>
     <div class="blader-select-area" onclick="event.stopPropagation()">
       <div class="blader-select-wrapper">
         <select id="rightBlader" class="blader-select">
@@ -842,8 +871,8 @@ window.insertAllBattles = async function(battleResults) {
     const leftSelect = document.getElementById('leftBlader');
     const rightSelect = document.getElementById('rightBlader');
 
-    leftSelect.innerHTML = '<option>読み込み中...</option>';
-    rightSelect.innerHTML = '<option>読み込み中...</option>';
+    leftSelect.innerHTML = '<option>Loading...</option>';
+    rightSelect.innerHTML = '<option>Loading...</option>';
 
     const { data, error } = await supabase.from('UserDB').select('Name');
 
@@ -879,10 +908,12 @@ window.insertAllBattles = async function(battleResults) {
     const selectedName = bladerSelect.value;
 
     // 初期化
-    beySelect.innerHTML = '<option>読み込み中...</option>';
+    beySelect.innerHTML = '<option>Loading...</option>';
 
     if (!selectedName) {
       beySelect.innerHTML = '<option value="">ベイを選択</option>';
+      // ブレーダー変更でベイがリセットされたら画像もクリア
+      if (window && typeof window.clearCardImage === 'function') window.clearCardImage(side);
       return;
     }
 
@@ -908,6 +939,7 @@ window.insertAllBattles = async function(battleResults) {
 
     if (combos.length === 0) {
       beySelect.innerHTML = '<option>登録なし</option>';
+      if (window && typeof window.clearCardImage === 'function') window.clearCardImage(side);
       return;
     }
 
@@ -918,6 +950,8 @@ window.insertAllBattles = async function(battleResults) {
     placeholder.textContent = 'ベイを選択';
     beySelect.appendChild(placeholder);
     beySelect.value = '';
+    // 初期化時に背景画像をクリア（ベイ選択前は表示しない）
+    if (window && typeof window.clearCardImage === 'function') window.clearCardImage(side);
 
     // その後にベイを追加
     combos.forEach(c => {
@@ -928,13 +962,65 @@ window.insertAllBattles = async function(battleResults) {
     });
   }
 
-  // === イベント設定 ===
+  // ベイ選択時にBladeDBから画像を取得して背景に設定
+  async function updateBladeImage(side) {
+    const beySelectId = side === 'left' ? 'leftBey' : 'rightBey';
+    const bgDivId = side === 'left' ? 'leftCardBg' : 'rightCardBg';
+    
+    const beySelect = document.getElementById(beySelectId);
+    const selectedBey = beySelect.value;
+    const bgDiv = document.getElementById(bgDivId);
+    
+    if (!selectedBey) {
+      // フェードアウト後に画像をクリア
+      bgDiv.style.opacity = '0';
+      setTimeout(() => {
+        bgDiv.style.backgroundImage = '';
+        bgDiv.style.opacity = '0.5';
+      }, 1000);
+      return;
+    }
+    
+    // ベイ名から最初の単語（ブレード名）を抽出
+    const bladeName = selectedBey.split(' ')[0];
+    
+    try {
+      // BladeDBから検索
+      const { data, error } = await supabase
+        .from('BladeDB')
+        .select('Image')
+        .eq('BladeName', bladeName)
+        .single();
+      
+      // エラー、またはデータが無い／Imageフィールドが空の場合は画像をクリア
+      if (error || !data || !data.Image) {
+        console.log('Image not found for blade:', bladeName);
+        bgDiv.style.opacity = '0';
+        setTimeout(() => {
+          bgDiv.style.backgroundImage = '';
+          bgDiv.style.opacity = '0.5';
+        }, 1000);
+        return;
+      }
+
+      // 画像がある場合は即時表示（フェードインは行わない）
+      bgDiv.style.backgroundImage = `url('${data.Image}')`;
+      bgDiv.style.opacity = '0.5';
+    } catch (err) {
+      console.error('Error fetching blade image:', err);
+    }
+  }
+
   document.addEventListener('DOMContentLoaded', () => {
     loadBladers();
 
     // 左右のブレーダー選択変更時
     document.getElementById('leftBlader').addEventListener('change', () => updateBeyOptions('left'));
     document.getElementById('rightBlader').addEventListener('change', () => updateBeyOptions('right'));
+    
+    // 左右のベイ選択変更時に画像を更新
+    document.getElementById('leftBey').addEventListener('change', () => updateBladeImage('left'));
+    document.getElementById('rightBey').addEventListener('change', () => updateBladeImage('right'));
   });
 </script>
 <script>
@@ -950,6 +1036,18 @@ window.insertAllBattles = async function(battleResults) {
   const resultSubmenu = document.getElementById('resultSubmenu');
   const battleData = JSON.parse(localStorage.getItem('battleData') || '[]');
   
+  // 非モジュール側で背景画像をフェードアウト・クリアする関数
+  function clearCardImage(side) {
+    const bgDivId = side === 'left' ? 'leftCardBg' : 'rightCardBg';
+    const bgDiv = document.getElementById(bgDivId);
+    if (!bgDiv) return;
+    bgDiv.style.opacity = '0';
+    setTimeout(() => {
+      bgDiv.style.backgroundImage = '';
+      bgDiv.style.opacity = '0.5';
+    }, 1000);
+  }
+
 
 
 
@@ -1093,7 +1191,7 @@ window.insertAllBattles = async function(battleResults) {
       return;
     }
 
-    if (currentBattle === 5) return;
+    if (currentBattle === 6) return;
 
     if(num===null){
       num = Math.max(...Object.keys(battleResults).map(Number),0)+1;
@@ -1237,8 +1335,10 @@ function selectResult(side, type) {
 
   } else {
     leftBeySelect.value = "";
-    rightBeySelect.value = ""; 
-
+    rightBeySelect.value = "";
+    // ベイクリア時に画像をフェードアウト（モジュール関数ではなく非モジュール側で処理）
+    clearCardImage('left');
+    clearCardImage('right');
   }
 
 

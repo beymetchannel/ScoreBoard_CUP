@@ -1326,20 +1326,11 @@ function selectResult(side, type) {
 
   }
 
-  // ２バトル目終了時は残り１つを３機目にセット
-  if (currentBattle === 2) {
-    const leftRemaining = Array.from(leftBeySelect.options).find(opt => !opt.disabled && opt.value !== "");
-    const rightRemaining = Array.from(rightBeySelect.options).find(opt => !opt.disabled && opt.value !== "");
-    if (leftRemaining) leftBeySelect.value = leftRemaining.value;
-    if (rightRemaining) rightBeySelect.value = rightRemaining.value;
-
-  } else {
-    leftBeySelect.value = "";
-    rightBeySelect.value = "";
-    // ベイクリア時に画像をフェードアウト（モジュール関数ではなく非モジュール側で処理）
-    clearCardImage('left');
-    clearCardImage('right');
-  }
+  leftBeySelect.value = "";
+  rightBeySelect.value = "";
+  // ベイクリア時に画像をフェードアウト（モジュール関数ではなく非モジュール側で処理）
+  clearCardImage('left');
+  clearCardImage('right');
 
 
   document.getElementById('battleOptions').classList.add('hidden');
@@ -1731,3 +1722,4 @@ function checkForClearOrNext() {
   window.addEventListener('resize', adjustButtonHeights);
 </script>
 </html>
+

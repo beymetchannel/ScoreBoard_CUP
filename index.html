@@ -1,1729 +1,1176 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link rel="shortcuticon" type="favicon.png" href="favicon.png">
-  <link rel="apple-touch-icon" sizes="180x180" href="favicon.png">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="apple-mobile-web-app-title" content="大会用スコアボード">
-  <title>大会用スコアボード</title>
-  <!-- 画像アップ先：https://imgur.com/a/yiVMSzu -->
-  <!-- <link rel="stylesheet" href="style.css"> -->
-  <!-- <script defer src="script.js"></script> -->
-  <style>
-    @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@600&display=swap');
-
-    html, body {
-      margin: 0;
-      padding: 0;
-      width: 100%;
-      height: 100%;
-      overflow: hidden;
-    }
-
-    body {
-      background-image: url('BackImage.png');
-      background-size: 100% 100%;
-      background-position: center; 
-      background-repeat: no-repeat; 
-    
-      font-family: "Orbitron", "Segoe UI", sans-serif;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      flex-direction: row;
-      column-gap: 10px; 
-      height: calc(var(--vh, 1vh) * 100);
-    }
-
-    #overlay {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background-color: rgba(0,0,0,0.6);
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      z-index: 9999;
-      transition: opacity 0.5s ease;
-    }
-
-    #welcomeBoard {
-      color: #fff;
-      font-size: 2em;
-      text-align: center;
-      line-height: 1.5;
-      transition: opacity 0.5s ease;
-    }
-
-    #welcomeBoard span {
-      display: block;
-      font-size: 0.5em;
-      margin-top: 0.3em;
-    }
-
-    #optionOverlay {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100vw;
-      height: 100vh;
-      background: rgba(0, 0, 0, 0.6);
-      backdrop-filter: blur(2px);
-      z-index: 500; 
-      opacity: 0;
-      pointer-events: none;
-      transition: opacity 0.3s ease, visibility 0.3s ease;
-    }
-
-    #optionOverlay.active {
-      display: block;
-      opacity: 1;
-      visibility: visible;
-      pointer-events: auto;
-    }
-
-
-
-
-    .menu-container {
-      position: fixed;
-      top: 10px;
-      left: 10px;
-      z-index: 2000;
-    }
-
-    .menu-icon {
-      font-size: 32px;
-      color: #00ffff;
-      cursor: pointer;
-      text-shadow: 0 0 10px #00ffff;
-      user-select: none;
-      display: none;
-    }
-
-    .menu-panel {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 180px;
-      height: 100vh;
-      background: rgba(0,0,0,0.9);
-      box-shadow: 4px 0 15px rgba(0,255,255,0.4);
-      transform: translateX(-100%);
-      transition: transform 0.3s ease;
-      display: flex;
-      flex-direction: column;
-      padding-top: 60px;
-      z-index: 1500;
-    }
-
-    .menu-panel.active { transform: translateX(0); }
-
-    .menu-btn {
-      height: 36px;
-      background: rgba(0,255,255,0.15);
-      color: #00ffff;
-      border: none;
-      text-align: left;
-      padding: 0 15px;
-      font-size: 1em;
-      cursor: pointer;
-      transition: 0.3s;
-      font-family: "Orbitron", sans-serif;
-    }
-    .menu-btn:hover { background: rgba(0,255,255,0.3); }
-
-
-    .submenu-panel {
-      box-sizing: border-box;
-      display: flex;
-      flex-direction: column;
-      position: fixed;
-      top: 0;
-      left: 180px;
-      width: 300px;
-      height: calc(var(--vh, 1vh) * 100);
-      background: rgba(0,0,0,0.85);
-      box-shadow: 4px 0 15px rgba(0,255,255,0.3);
-      transform: translateX(-200%);
-      transition: transform 0.3s ease;
-      padding-top: 60px;
-      z-index: 1400;
-    }
-
-    .submenu-panel.active {
-      transform: translateX(0);
-    }
-
-    .blader-input-area {
-      display: flex;
-      align-items: center;
-      gap: 5px;
-      padding: 0 10px;
-    }
-
-    #bladerName {
-      width: 80%; 
-      height: 36px;
-      font-size: 1em;
-      border-radius: 6px;
-      border: none;
-      padding: 0 10px;
-      background: rgba(255,255,255,0.1);
-      color: #fff;
-    }
-
-    #addBlader {
-      height: 36px;
-      font-size: 0.9em;
-      border-radius: 4px;
-      border: none;
-      background: #00aaaa;
-      color: #fff;
-      font-family: "Orbitron", sans-serif;
-      cursor: pointer;
-      padding: 0 10px; 
-      width: auto;
-    }
-    #addBlader:hover { background: rgba(0,255,255,0.3); }
-
-
-    .blader-list {
-      margin-top: 15px;
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-      padding: 0 10px;
-    }
-
-    .blader-list,
-    #dataBattleList,
-    #resultBattleList { 
-      flex: 1;  
-      overflow-y: auto;
-    }
-
-    .blader-list::-webkit-scrollbar,
-    #dataBattleList::-webkit-scrollbar,
-    #resultBattleList::-webkit-scrollbar {
-      width: 6px;
-    }
-    .blader-list::-webkit-scrollbar-thumb,
-    #dataBattleList::-webkit-scrollbar-thumb,
-    #resultBattleList::-webkit-scrollbar-thumb {
-      background-color: rgba(255,255,255,0.3);
-      border-radius: 3px;
-    }
-
-    .blader-item {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding-left: 10px;
-    }
-
-    .blader-item span {
-      font-size: 1em;
-      color: #fff;
-      display: inline-block;
-      max-width: 150px;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-
-    .blader-item button {
-      height: 36px;
-      font-size: 0.9em;
-      border-radius: 4px;
-      border: none;
-      background: #ff5555;
-      color: #fff;
-      font-family: "Orbitron", sans-serif;
-      cursor: pointer;
-      padding: 0 10px;
-    }
-    .blader-item button:hover { background: rgba(0,255,255,0.3); }
-
-
-    #resultSubmenu {
-      position: fixed;
-      top: 0;
-      left: 180px;
-      width: calc(100vw - 180px);
-      height: 100vh;
-      background: rgba(0,0,0,0.85);
-      box-shadow: 4px 0 15px rgba(0,255,255,0.3);
-      transform: translateX(-200%);
-      transition: transform 0.3s ease;
-      padding-top: 60px;
-      z-index: 1400;
-    }
-
-    #resultSubmenu.active {
-      transform: translateX(0);
-    }
-
-
-    .small-clear-btn {
-      position: fixed;
-      top: 10px;
-      right: 10px;
-      height: 36px;
-      font-size: 0.9em;
-      border-radius: 4px;
-      border: none;
-      background: #ff5555;
-      color: #fff;
-      font-family: "Orbitron", sans-serif;
-      cursor: pointer;
-      padding: 0 10px;
-      z-index: 2100; 
-    }
-    .small-clear-btn:hover {
-      background: rgba(0,255,255,0.3);
-    }
-
-
-    #resultBattleList .battleDataHeader,
-    #resultBattleList .battleDataItem {
-      display: grid;
-      grid-template-columns: 2fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr;
-      gap: 5px;
-      align-items: center;
-    }
-
-    #resultBattleList .battleDataHeader span {
-      font-weight: bold;
-      color: #00ffff;
-      background: rgba(0,255,255,0.2);
-      padding: 5px 8px;
-      border-radius: 4px;
-      text-align: center;
-    }
-
-    #resultBattleList .battleDataItem span {
-      color: #fff;
-      background: rgba(0,0,0,0.3);
-      padding: 5px 8px;
-      border-radius: 4px;
-      text-align: center;
-    }
-
-    #resultBattleList .battleDataItem span:nth-child(1),
-    #resultBattleList .battleDataHeader span:nth-child(1) {
-      text-align: left;
-      padding-left: 10px;
-      white-space: nowrap; 
-      overflow: hidden;     
-      text-overflow: ellipsis; 
-    }
-
-
-
-    .small-del-btn {
-      background-color: #ff4d4d;
-      font-family: "Orbitron", sans-serif;
-      border: none;
-      color: #fff;
-      font-size: 0.7rem;
-      padding: 2px 5px;
-      border-radius: 4px;
-      cursor: pointer;
-      justify-self: end;
-      height: 20px;
-    }
-
-    .small-del-btn:hover {
-      background-color: #ff1a1a;
-    }
-
-    .battleDataItem .small-del-btn {
-      justify-self: center; 
-      height: 20px;
-    }
-
-
-
-    .card {
-      position: relative;
-      width: 40%;
-      height: calc(100% - 10px);
-      border-radius: 12px;
-      cursor: pointer;
-      margin: 5px 0;
-      display: flex;
-      justify-content: center;
-      align-items: flex-start; /* 上に揃える */
-      padding-top: 10px; /* 上の余白 */
-    }
-
-    .card-bg-image {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      border-radius: 12px;
-      background-size: cover;
-      background-repeat: no-repeat;
-      opacity: 0.5;
-      z-index: 0;
-      pointer-events: none;
-      transition: opacity 1s ease;
-    }
-
-    .left-card .card-bg-image {
-      background-position: right;
-    }
-
-    .right-card .card-bg-image {
-      background-position: left;
-    }
-
-    .card .card-top {
-      position: relative; /* 上部に普通に配置 */
-      display: flex;
-      flex-direction: column;
-      gap: 5px;
-      z-index: 1; /* スコアより前面 */
-    }
-
-    .card .score {
-      position: absolute;
-      bottom: 5px;
-      left: 50%;
-      transform: translateX(-50%);
-      font-size: 12em;
-      color: #fff;
-      text-shadow: 0 0 25px rgba(255,255,255,0.6);
-      z-index: 10;
-    }
-
-    .left-card {
-      background: linear-gradient(to right,
-        rgba(0, 51, 68, 0.3) 0%, 
-        rgba(0, 51, 68, 1.0) 90% 
-      );
-    }
-
-    .right-card {
-      background: linear-gradient(to left,
-        rgba(68, 0, 0, 0.3) 0%, 
-        rgba(68, 0, 0, 1.0) 90%
-      );
-    }
-
-
-
-
-
-    .score {
-      font-size: 12em;
-      font-weight: bold;
-      text-align: center;
-      color: #fff;
-      text-shadow: 0 0 25px rgba(255,255,255,0.6);
-      transition: 0.3s;
-    }
-
-    .battle-buttons {
-      position: relative;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: space-between; 
-      height: 100%; /* 90vh; */
-      margin: 0;
-      padding-top: 10px; 
-      
-    }
-
-    #battleBtnWrapper {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: flex-start;
-      flex-grow: 1;
-      gap: 2px;
-    }
-
-    .battle-btn {
-      width: 140px;
-      padding: 0 10px;
-      white-space: nowrap;
-      text-align: center;
-      height: 60px;
-      border: none;
-      border-radius: 8px;
-      background-color: rgba(0,0,0,0.8);
-      font-family: 'Orbitron', sans-serif;
-      font-size: 1.3em;
-      color: #ffffff;
-      text-shadow: 0 0 10px #ffffff;
-      cursor: pointer;
-      transition: 0.3s;
-      font-weight: bold;
-      box-shadow: 0 0 15px rgba(255,255,255,0.6);
-    }
-    .battle-btn:active { transform: scale(1.05); }
-
-    .battle-btn.tab-left { background-color: #003344; border-radius: 0 12px 12px 0; transform: translateX(-25px); }
-    .battle-btn.tab-right { background-color: #440000; border-radius: 12px 0 0 12px; transform: translateX(25px); }
-
-
-    .battle-btn.no-glow {
-      box-shadow: none !important;
-    }
-
-
-    .battle-btn.spin {
-      color: #00eaff;
-      text-shadow: 0 0 8px #00eaff, 0 0 16px #00eaff;
-    }
-
-    .battle-btn.burst {
-      color: #ff8800;
-      text-shadow: 0 0 8px #ff8800, 0 0 16px #ff6600;
-    }
-
-    .battle-btn.over {
-      color: #99ff00;
-      text-shadow: 0 0 8px #99ff00, 0 0 16px #66ff00;
-    }
-
-    .battle-btn.xtreme {
-      color: #ae00ff;
-      text-shadow: 0 0 8px #ae00ff, 0 0 16px #ae00ff;
-    }
-
-
-
-    .reset-btn {
-      background-color: #222;
-      font-family: "Orbitron", sans-serif;
-      color: #ffcc00;
-      border-radius: 8px;
-      width: 140px;
-      height: 50px;
-      border: 2px solid #ffcc00;
-      font-size: 1em;
-      font-weight: bold;
-      cursor: pointer;
-      margin-top: 0px;
-      margin-bottom: 10px; 
-    }
-    .reset-btn:hover { background-color: #444; transform: scale(1.05); }
-
-    .clear-btn {
-      background-color: #550000;
-      border: 2px solid #ff3333;
-      color: #fff;
-      width: 140px;
-      height: 50px;
-      border-radius: 10px;
-      font-size: 1em;
-      font-weight: bold;
-      text-shadow: 0 0 10px #ff5555;
-      cursor: pointer;
-    }
-    .clear-btn:hover { background-color: #770000; transform: scale(1.05); }
-
-
-    .blader-select select {
-      font-family: "Orbitron", sans-serif;
-      font-size: 1em;
-      padding: 5px 10px;
-      border-radius: 6px;
-      border: none;
-      background: rgba(255,255,255,0.15);
-      color: #fff;
-      outline: none;
-      text-align: left;
-      margin-left: 10px;
-    }
-
-    .blader-select-area {
-      flex-direction: column; 
-      display: flex;
-      align-items: center;
-      gap: 5px;       
-      position: absolute;
-      top: 10px; 
-      width: auto;
-      z-index: 10;    
-    }
-
-    .blader-label {
-      display: inline-block;
-      height: 36px;
-      line-height: 36px;
-      color: #fff;
-      font-size: 1rem;
-      text-align: left;
-      flex-shrink: 0;
-      margin: 0;
-      padding: 0;
-      top: 0px; 
-    }
-
-    .blader-select {
-      flex-grow: 0;
-      width: 250px;            
-      height: 36px;
-      border-radius: 6px;
-      border: none;
-      font-size: 1em;
-      font-family: "Orbitron", sans-serif;
-      background: rgba(255,255,255,0.15);
-      color: #fff;
-      text-align: left;
-      cursor: pointer;
-      padding: 0 5px;
-      position: relative;
-      overflow: hidden;       
-      text-overflow: ellipsis;  
-      white-space: nowrap;     
-      top: 0px;
-    }
-
-
-
-    .blader-select option {
-      background: #222;
-      color: #fff;
-    }
-
-    .blader-select-container {
-      display: flex;
-      align-items: center;
-      justify-content: flex-start;
-      gap: 8px;
-    }
-
-    .blader-select-wrapper {
-      display: flex;
-      align-items: center;
-      gap: 5px;
-    }
-
-    .clear-select-btn {
-      background: none;
-      border: none;
-      color: #fff;
-      font-weight: bold;
-      cursor: pointer;
-      font-size: 1rem;
-      line-height: 1;
-      display: none; /* 非表示: clear-select-btn を隠す */
-    }
-
-
-
-
-
-
-    #battleDataList {
-      padding: 10px;
-      overflow-y: auto;
-      max-height: 100vh;
-      display: flex;
-      flex-direction: column; 
-      gap: 5px;
-    }
-
-
-    .battleDataHeader {
-      display: grid;
-      grid-template-columns: 2fr 1fr 1fr 40px;
-      font-size: 0.8rem;
-      gap: 5px;
-    }
-
-    .battleDataHeader span {
-      font-weight: bold;
-      color: #00ffff;
-      background: rgba(0,255,255,0.2);
-      padding: 5px 8px;
-      border-radius: 4px;
-      text-align: center;
-    }
-    .battleDataHeader span:last-child {
-      background: none; 
-      color: transparent; 
-      pointer-events: none; 
-    }
-
-
-    .battleDataItem {
-      display: grid;
-      grid-template-columns: 2fr 1fr 1fr; /* Blader:Score:Time */
-      gap: 5px;
-    }
-
-    .battleDataItem span {
-      color: #fff;
-      background: rgba(0,0,0,0.3);
-      padding: 5px 8px;
-      border-radius: 4px;
-      font-size: 0.8rem;
-    }
-
-
-    .battleDataItem span:nth-child(1),
-    .battleDataHeader span:nth-child(1) { text-align: left; padding-left: 10px; }
-    .battleDataItem span:nth-child(2),
-    .battleDataHeader span:nth-child(2) { text-align: center; }
-    .battleDataItem span:nth-child(3),
-    .battleDataHeader span:nth-child(3) { text-align: right; padding-right: 10px; }
-
-
-    .battleDataItem span:nth-child(1) {
-      white-space: nowrap;    
-      overflow: hidden;    
-      text-overflow: ellipsis; 
-    }
-
-    .battle-options {
-      position: absolute;
-      top: 0; left: 0;
-      width: 100%; height: 100%;
-      display: flex;
-      justify-content: space-between;
-      pointer-events: none;
-      z-index: 1000;
-    }
-    .option-group {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 10px;
-      width: 40%;
-      height: 90%;
-      pointer-events: all;
-      position: absolute;
-      top: 5%;
-    }
-    #leftOptions { left: 0; }
-    #rightOptions { right: 0; }
-
-    .option-btn {
-      width: 100%;
-      height: 100%;
-      border: none;
-      border-radius: 10px;
-      background-color: rgba(0,0,0,0.6);
-      background-size: cover;
-      background-position: center;
-      cursor: pointer;
-      opacity: 0.9;
-      transition: 0.2s;
-    }
-    .option-btn:hover { opacity: 1; }
-
-    .hidden { display: none; }
-  </style>
-</head>
-<body>
-
-  <!-- ===== メニュー ===== -->
-  <div class="menu-container">
-    <div class="menu-icon" id="menuIcon">☰</div>
-  </div>
-
-  <div class="menu-panel" id="menuPanel">
-    <button class="menu-btn" id="bladerBtn">ブレーダー</button>
-    <button class="menu-btn" id="resultBtn">リザルト</button>
-    <button class="menu-btn" id="dataBtn">データ</button>
-  </div>
-
-  <div class="submenu-panel" id="bladerSubmenu">
-    <div class="blader-input-area">
-      <input type="text" id="bladerName" placeholder="ブレーダー名">
-      <button id="addBlader">Add</button>
-    </div>
-    <div class="blader-list" id="bladerList"></div>
-  </div>
-
-  <div class="submenu-panel" id="dataSubmenu">
-    <div id="dataBattleList" style="padding:10px; overflow-y:auto; max-height:100vh;"></div>
-  </div>
-
-  <div class="submenu-panel" id="resultSubmenu">
-    <button id="resultClearBtn" class="small-clear-btn">Clear</button>
-    <div id="resultBattleList"></div>
-  </div>
-
-  <!-- ===== カード類 ===== -->
-  <div class="card left-card" onclick="toggleBattleOptions(null,'L')">
-    <div class="card-bg-image" id="leftCardBg"></div>
-    <div class="blader-select-area" onclick="event.stopPropagation()">
-      <div class="blader-select-wrapper">
-        <!-- ブレーダー選択 -->
-        <select id="leftBlader" class="blader-select">
-          <option value="Blader A" selected></option>
-        </select>
-        <!-- クリアボタン -->
-        <button class="clear-select-btn" data-side="L">×</button>
-      </div>
-      
-      <!-- ベイ選択ボックス -->
-      <div class="blader-select-wrapper" style="margin-top:5px;">
-        <select id="leftBey" class="blader-select">
-          <option value="" selected>ベイを選択</option>
-        </select>
-        <button class="clear-select-btn" data-side="L" onclick="document.getElementById('leftBey').selectedIndex=0">×</button>
-      </div>
-    </div>
-    <div class="score" id="leftScore">0</div>
-  </div>
-
-
-
-  <div class="battle-buttons" id="battleButtons">
-    <div id="battleBtnWrapper">
-      <button class="battle-btn" id="battle1" onclick="toggleBattleOptions(1)">1st</button>
-    </div>
-    <button class="reset-btn" onclick="undoLastBattle()">Back</button>
-  </div>
-
-  <div class="card right-card" onclick="toggleBattleOptions(null,'R')">
-    <div class="card-bg-image" id="rightCardBg"></div>
-    <div class="blader-select-area" onclick="event.stopPropagation()">
-      <div class="blader-select-wrapper">
-        <select id="rightBlader" class="blader-select">
-          <option value="Blader B" selected></option>
-        </select>
-        <button class="clear-select-btn" data-side="R">×</button>
-      </div>
-
-      <div class="blader-select-wrapper" style="margin-top:5px;">
-        <select id="rightBey" class="blader-select">
-          <option value="" selected>ベイを選択</option>
-        </select>
-        <button class="clear-select-btn" data-side="R" onclick="document.getElementById('rightBey').selectedIndex=0">×</button>
-      </div>
-    </div>
-    <div class="score" id="rightScore">0</div>
-  </div>
-
-  <!-- ===== バトルオプション ===== -->
-  <div id="battleOptions" class="battle-options hidden">
-    <div class="option-group" id="leftOptions">
-      <button class="option-btn" style="background-image:url('SPIN.png')" onclick="selectResult('L','SF')"></button>
-      <button class="option-btn" style="background-image:url('BURST.png')" onclick="selectResult('L','BF')"></button>
-      <button class="option-btn" style="background-image:url('ORVER.png')" onclick="selectResult('L','OF')"></button>
-      <button class="option-btn" style="background-image:url('XTREME.png')" onclick="selectResult('L','XF')"></button>
-    </div>
-    <div class="option-group" id="rightOptions">
-      <button class="option-btn" style="background-image:url('SPIN.png')" onclick="selectResult('R','SF')"></button>
-      <button class="option-btn" style="background-image:url('BURST.png')" onclick="selectResult('R','BF')"></button>
-      <button class="option-btn" style="background-image:url('ORVER.png')" onclick="selectResult('R','OF')"></button>
-      <button class="option-btn" style="background-image:url('XTREME.png')" onclick="selectResult('R','XF')"></button>
-    </div>
-  </div>
-  <div id="optionOverlay"></div>
-
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>BEY BATTLE SCOREBOARD PRO - v3.6 Layout Optimized</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Noto+Sans+JP:wght@400;700&display=swap');
+
+  :root {
+    --c-bg: #0a0a0f;
+    --c-panel: #12121a;
+    --c-card: #1a1a26;
+    --c-border: #2a2a40;
+    --c-accent-l: #00c8ff;
+    --c-accent-r: #ff4466;
+    --c-gold: #ffd700;
+    --c-text: #e8e8f0;
+    --c-muted: #6868a0;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Noto Sans JP', sans-serif;
+    background: var(--c-bg); color: var(--c-text);
+    width: 100vw; height: 100vh; overflow: hidden; user-select: none;
+  }
+
+  #app { width: 100vw; height: 100vh; display: flex; flex-direction: column; }
+
+  /* HEADER & CUSTOM DROPDOWN */
+  .header-grid {
+    display: grid; grid-template-columns: 1fr 120px 1fr;
+    border-bottom: 1px solid var(--c-border); background: var(--c-panel);
+    z-index: 100;
+  }
+  .header-item { border-right: 1px solid var(--c-border); padding: 5px 10px; position: relative; }
+  .header-item:last-child { border-right: none; }
+  .label-sm { font-family: 'Orbitron'; font-size: 10px; color: var(--c-muted); margin-bottom: 2px; }
+
+  .custom-select {
+    width: 100%; background: #000; border: 1px solid var(--c-border); color: #fff;
+    font-size: 14px; font-weight: 700; padding: 6px 12px; border-radius: 4px;
+    display: flex; align-items: center; justify-content: flex-start; cursor: pointer;
+    min-height: 36px; text-align: left;
+  }
+  .custom-select img { width: 22px; height: 22px; border-radius: 50%; margin-right: 10px; border: 1px solid var(--c-border); flex-shrink: 0; }
+
+  .dropdown-list {
+    position: absolute; top: 100%; left: 5px; right: 5px; 
+    max-height: 350px; overflow-y: auto; background: #000; border: 1px solid var(--c-border);
+    display: none; z-index: 1000; box-shadow: 0 10px 25px rgba(0,0,0,0.9);
+  }
+  .dropdown-list.show { display: block; }
   
-</body>
-<script type="module">
-  import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
-  const supabaseUrl = 'https://ddmjevqneetbmahtcqdl.supabase.co';
-  const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRkbWpldnFuZWV0Ym1haHRjcWRsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI5NzM5MTksImV4cCI6MjA3ODU0OTkxOX0.L63jZ8n7MjsTuGaNYYyRWvxOM-gzYlFzIMuZ4gvgHrk'; // anonキーを使用
-  const supabase = createClient(supabaseUrl, supabaseKey);
+  .dropdown-item {
+    padding: 10px 12px; border-bottom: 1px solid #1a1a26;
+    display: flex; align-items: center; justify-content: flex-start;
+    cursor: pointer; transition: 0.2s;
+  }
+  .dropdown-item:hover { background: var(--c-card); }
+  .dropdown-item img { width: 28px; height: 28px; border-radius: 50%; margin-right: 12px; border: 1px solid var(--c-border); flex-shrink: 0; }
+  .dropdown-item span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
+  .battle-info { text-align: center; display: flex; flex-direction: column; justify-content: center; }
+  .battle-num { font-family: 'Orbitron'; font-size: 20px; font-weight: 700; }
 
-window.insertAllBattles = async function(battleResults) {
-  const pointMap = { SF: 1, BF: 2, OF: 2, XF: 3 };
-  const finishMap = { SF: 'Spin', BF: 'Burst', OF: 'Over', XF: 'Xtreme' };
+  /* MAIN AREA */
+  .battle-main { flex: 1; display: grid; grid-template-columns: 1fr 220px 1fr; align-items: center; }
+  .center-column { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 15px; width: 100%; }
+  .score-box { text-align: center; }
+  .score-num { font-family: 'Orbitron'; font-size: 160px; font-weight: 900; line-height: 1; }
+  .score-num.left { color: var(--c-accent-l); }
+  .score-num.right { color: var(--c-accent-r); }
 
-  const { data: existing } = await supabase
-    .from('ResultDB')
-    .select('BattleNo');
+  /* BUTTONS & PROGRESS */
+  #undo-btn, #save-btn, .finish-btn {
+    position: relative; overflow: hidden; cursor: pointer; transition: transform 0.1s, box-shadow 0.2s;
+    border: 1px solid var(--c-border); display: flex; flex-direction: column; align-items: center; justify-content: center;
+  }
 
-  const maxBattleNo = existing?.length ? Math.max(...existing.map(d => d.BattleNo)) : 0;
+  /* ── Cyber gauge bar ── */
+  .progress-fill {
+    position: absolute; left: 0; top: 0; bottom: 0; width: 0%;
+    pointer-events: none; z-index: 0;
+    opacity: 0;
+    transition: none;
+  }
+  .holding .progress-fill {
+    transition: width 0.5s linear, opacity 0.05s;
+    width: 100%; opacity: 1;
+  }
 
-  const records = Object.entries(battleResults).map(([i, b], idx) => ({
-    BattleNo: maxBattleNo + idx + 1,
-    LBlader: b.leftBlader,
-    RBlader: b.rightBlader,
-    LBey: b.leftBey,
-    LPoint: b.side === 'L' ? pointMap[b.type] : -pointMap[b.type],
-    RBey: b.rightBey,
-    RPoint: b.side === 'R' ? pointMap[b.type] : -pointMap[b.type],
-    Finish: finishMap[b.type],
-    TimeStamp: new Date().toISOString()
-  }));
+  /* Scanline overlay for cyber feel */
+  .progress-fill::after {
+    content: '';
+    position: absolute; inset: 0;
+    background: repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 3px,
+      rgba(0,0,0,0.25) 3px,
+      rgba(0,0,0,0.25) 4px
+    );
+  }
 
-  const { data, error } = await supabase.from('ResultDB').insert(records);
-  if (error) console.error(error);
-  else console.log('Inserted all battles:', data);
+  /* ── Per-button gauge colors ── */
+  /* spin → 青 */
+  [data-type="spin"] .progress-fill {
+    background: linear-gradient(90deg, #0044ff 0%, #00c8ff 60%, #80eaff 100%);
+    box-shadow: inset 0 0 14px #00c8ff, 0 0 20px #00c8ff;
+  }
+  [data-type="spin"].holding {
+    border-color: #00c8ff;
+    box-shadow: 0 0 18px rgba(0,200,255,0.7);
+  }
+
+  /* burst → オレンジ */
+  [data-type="burst"] .progress-fill {
+    background: linear-gradient(90deg, #c04000 0%, #ff7700 60%, #ffb060 100%);
+    box-shadow: inset 0 0 14px #ff7700, 0 0 20px #ff7700;
+  }
+  [data-type="burst"].holding {
+    border-color: #ff7700;
+    box-shadow: 0 0 18px rgba(255,119,0,0.7);
+  }
+
+  /* over → 黄色 */
+  [data-type="over"] .progress-fill {
+    background: linear-gradient(90deg, #998000 0%, #ffd700 60%, #fff080 100%);
+    box-shadow: inset 0 0 14px #ffd700, 0 0 20px #ffd700;
+  }
+  [data-type="over"].holding {
+    border-color: #ffd700;
+    box-shadow: 0 0 18px rgba(255,215,0,0.7);
+  }
+
+  /* xtreme → 水色・紫・ピンク */
+  [data-type="xtreme"] .progress-fill {
+    background: linear-gradient(90deg, #7b2fff 0%, #ff4fc8 60%, #00c8ff 100%);
+    box-shadow: inset 0 0 14px #ff4fc8, 0 0 20px #7b2fff;
+  }
+  [data-type="xtreme"].holding {
+    border-color: #ff4fc8;
+    box-shadow: 0 0 18px rgba(255,79,200,0.7);
+  }
+
+  /* undo → 赤 */
+  #undo-btn .progress-fill {
+    background: linear-gradient(90deg, #800000 0%, #ff2020 60%, #ff9090 100%);
+    box-shadow: inset 0 0 14px #ff2020, 0 0 20px #ff2020;
+  }
+  #undo-btn.holding {
+    border-color: #ff2020;
+    box-shadow: 0 0 18px rgba(255,32,32,0.7);
+  }
+
+  /* save/確定 → 黄色 */
+  #save-btn .progress-fill {
+    background: linear-gradient(90deg, #998000 0%, #ffd700 60%, #fff080 100%);
+    box-shadow: inset 0 0 14px #ffd700, 0 0 20px #ffd700;
+  }
+  #save-btn.holding {
+    border-color: #ffd700;
+    box-shadow: 0 0 18px rgba(255,215,0,0.7);
+  }
+
+  /* ── Gauge-full flash effect ── */
+  @keyframes gaugeFlash {
+    0%   { opacity: 1; filter: brightness(2); }
+    30%  { opacity: 0.6; filter: brightness(1.5); }
+    60%  { opacity: 1; filter: brightness(2.5); }
+    100% { opacity: 0; filter: brightness(1); }
+  }
+  .gauge-full .progress-fill {
+    animation: gaugeFlash 0.4s ease-out forwards;
+  }
+
+  /* Burst-particle container */
+  .btn-burst {
+    position: absolute; inset: 0; pointer-events: none; z-index: 2; overflow: hidden;
+  }
+  .btn-burst span {
+    position: absolute;
+    width: 6px; height: 6px; border-radius: 50%;
+    animation: burstParticle 0.5s ease-out forwards;
+  }
+  @keyframes burstParticle {
+    0%   { transform: translate(0,0) scale(1); opacity: 1; }
+    100% { transform: translate(var(--dx), var(--dy)) scale(0); opacity: 0; }
+  }
+
+  #undo-btn span, #save-btn span, .finish-btn span, .btn-ja { position: relative; z-index: 1; }
+  
+  #undo-btn, #save-btn {
+    font-size: 12px; font-weight: 700; padding: 10px 30px; border-radius: 4px;
+    background: var(--c-panel); color: var(--c-text); display: none;
+  }
+  #save-btn.ready { display: block; border-color: var(--c-gold); color: var(--c-gold); background: var(--c-card); }
+
+  /* GRID */
+  .center-grid { display: grid; grid-template-columns: 60px 1fr 1fr 60px; grid-template-rows: repeat(3, 1fr); gap: 10px; align-items: center; }
+  .grid-label { font-family: 'Orbitron'; font-size: 11px; color: var(--c-gold); text-align: center; font-weight: 700; min-height: 1em; }
+  
+  .bey-slot {
+    width: 65px; height: 65px; border-radius: 50%; background: var(--c-card);
+    border: 2px solid var(--c-border); display: flex; align-items: center; justify-content: center;
+    overflow: hidden; position: relative; cursor: pointer; margin: 0 auto; transition: 0.3s;
+  }
+  .bey-slot.active { border-color: var(--c-gold); box-shadow: 0 0 15px rgba(255, 215, 0, 0.4); }
+  .bey-slot.filled { border-color: #fff; }
+  .bey-slot img { width: 100%; height: 100%; object-fit: cover; }
+  .bey-slot.locked { opacity: 0.3; cursor: default; }
+  .bey-slot.defeated { filter: grayscale(1); opacity: 0.5; }
+
+  /* FOOTER */
+  .footer-bar { display: grid; grid-template-columns: repeat(4, 1fr) 50px repeat(4, 1fr); background: var(--c-panel); border-top: 1px solid var(--c-border); padding: 8px; gap: 4px; }
+  .finish-btn { height: 55px; border-radius: 4px; background: var(--c-card); color: #fff; font-size: 10px; font-weight: 700; }
+  .finish-btn:disabled { opacity: 0.1; cursor: default; }
+  .btn-ja { font-size: 9px; margin-bottom: 2px; }
+
+  /* OVERLAY (左右振り分け用にflex-directionを変更) */
+  #selection-overlay { 
+    display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.9); 
+    z-index: 2000; flex-direction: row; align-items: center; padding: 0 40px; 
+  }
+  .picker-grid { display: flex; gap: 20px; }
+  .pick-item { background: var(--c-card); border: 2px solid var(--c-border); border-radius: 12px; padding: 15px; width: 110px; text-align: center; cursor: pointer; }
+  .pick-item.used { opacity: 0.2; pointer-events: none; filter: grayscale(1); }
+  .pick-img { width: 70px; height: 70px; margin: 0 auto 10px; border-radius: 50%; overflow: hidden; border: 1px solid var(--c-border); }
+  .pick-img img { width: 100%; height: 100%; object-fit: cover; }
+  .pick-name { font-size: 11px; color: #fff; font-weight: 700; }
+
+  #toast { position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%); background: var(--c-card); padding: 10px 20px; border-radius: 8px; opacity: 0; transition: 0.3s; z-index: 3000; pointer-events: none; }
+  #toast.show { opacity: 1; }
+
+  /* ═══════════════════════════════
+     SCORE WIN EFFECT
+  ═══════════════════════════════ */
+
+  /* スコアエリアのposition基準 */
+  .score-box { position: relative; overflow: visible; }
+
+  /* ① スコア数字ポンプアップ */
+  @keyframes scorePump {
+    0%   { transform: scale(1); }
+    25%  { transform: scale(1.25); filter: brightness(2.5); }
+    55%  { transform: scale(0.95); }
+    75%  { transform: scale(1.08); filter: brightness(1.6); }
+    100% { transform: scale(1); filter: brightness(1); }
+  }
+  .score-num.pump {
+    animation: scorePump 0.55s cubic-bezier(.36,.07,.19,.97) forwards;
+  }
+
+  /* ② 全画面フラッシュ */
+  #win-flash {
+    position: fixed; inset: 0; pointer-events: none; z-index: 900; opacity: 0;
+  }
+  #win-flash.active {
+    animation: winFlash 0.5s ease-out forwards;
+  }
+  @keyframes winFlash {
+    0%   { opacity: 0.55; }
+    100% { opacity: 0; }
+  }
+
+  /* ③ サイドハーフフラッシュ */
+  .score-box::after {
+    content: '';
+    position: fixed; top: 0; bottom: 0; width: 50%;
+    pointer-events: none; z-index: 800; opacity: 0;
+  }
+  .score-box.flash-left::after  { left: 0; }
+  .score-box.flash-right::after { right: 0; }
+  .score-box.flashing::after {
+    animation: sideFlash 0.6s ease-out forwards;
+  }
+  @keyframes sideFlash {
+    0%   { opacity: 0.35; }
+    100% { opacity: 0; }
+  }
+
+  /* ④ スコアリング時ラベルの光り */
+  @keyframes labelGlow {
+    0%   { opacity: 0; transform: translateY(8px) scale(0.8); }
+    40%  { opacity: 1; transform: translateY(-4px) scale(1.15); }
+    70%  { transform: translateY(0) scale(1); }
+    100% { opacity: 1; transform: translateY(0) scale(1); }
+  }
+  .grid-label.label-pop {
+    animation: labelGlow 0.4s ease-out forwards;
+  }
+
+  /* ⑤ WIN STREAK テキスト */
+  #win-text {
+    position: fixed; top: 30%; pointer-events: none; z-index: 1000;
+    font-family: 'Orbitron', sans-serif; font-weight: 900;
+    font-size: 52px; letter-spacing: 0.1em;
+    text-shadow: 0 0 30px currentColor, 0 0 60px currentColor;
+    opacity: 0; white-space: nowrap;
+    text-transform: uppercase;
+  }
+  #win-text.show-left  { left: 4%; transform: none; }
+  #win-text.show-right { right: 4%; transform: none; }
+  #win-text.animate {
+    animation: winText 1.1s cubic-bezier(.22,1,.36,1) forwards;
+  }
+  @keyframes winText {
+    0%   { opacity: 0; transform: scale(0.4) skewX(-12deg); filter: blur(8px); }
+    30%  { opacity: 1; transform: scale(1.12) skewX(-6deg); filter: blur(0); }
+    55%  { transform: scale(0.97) skewX(0); }
+    75%  { transform: scale(1.04); opacity: 1; }
+    100% { transform: scale(1); opacity: 0; }
+  }
+
+  /* ⑥ パーティクルcanvas */
+  #fx-canvas {
+    position: fixed; inset: 0; pointer-events: none; z-index: 850;
+  }
+</style>
+</head>
+<body onclick="closeAllDropdowns()">
+
+<div id="app">
+  <div class="header-grid">
+    <div class="header-item">
+      <div class="label-sm">L BLADER</div>
+      <div class="custom-select" id="trigger-left" onclick="toggleDropdown(event, 'left')">SELECT...</div>
+      <div class="dropdown-list" id="list-left"></div>
+    </div>
+    <div class="battle-info">
+      <div class="label-sm">BATTLE</div>
+      <div class="battle-num" id="battle-round-disp">01</div>
+    </div>
+    <div class="header-item">
+      <div class="label-sm" style="text-align:right">R BLADER</div>
+      <div class="custom-select" id="trigger-right" onclick="toggleDropdown(event, 'right')">SELECT...</div>
+      <div class="dropdown-list" id="list-right"></div>
+    </div>
+  </div>
+
+  <div class="battle-main">
+    <div class="score-box"><div class="score-num left" id="score-left">0</div></div>
+    <div class="center-column">
+      <button id="undo-btn" onmousedown="startHold(event)" onmouseup="endHold()" ontouchstart="startHold(event)" ontouchend="endHold()"><span>戻る</span><div class="progress-fill"></div></button>
+      <div class="center-grid">
+        <div class="grid-label" id="label-left-1"></div><div class="bey-slot" id="slot-left-1" onclick="openPicker('left', 1)"></div><div class="bey-slot" id="slot-right-1" onclick="openPicker('right', 1)"></div><div class="grid-label" id="label-right-1"></div>
+        <div class="grid-label" id="label-left-2"></div><div class="bey-slot" id="slot-left-2" onclick="openPicker('left', 2)"></div><div class="bey-slot" id="slot-right-2" onclick="openPicker('right', 2)"></div><div class="grid-label" id="label-right-2"></div>
+        <div class="grid-label" id="label-left-3"></div><div class="bey-slot" id="slot-left-3" onclick="openPicker('left', 3)"></div><div class="bey-slot" id="slot-right-3" onclick="openPicker('right', 3)"></div><div class="grid-label" id="label-right-3"></div>
+      </div>
+      <button id="save-btn" onmousedown="startHold(event)" onmouseup="endHold()" ontouchstart="startHold(event)" ontouchend="endHold()"><span>確定</span><div class="progress-fill"></div></button>
+    </div>
+    <div class="score-box"><div class="score-num right" id="score-right">0</div></div>
+  </div>
+
+  <div class="footer-bar">
+    <button class="finish-btn" data-side="left" data-type="xtreme" onmousedown="startHold(event)" onmouseup="endHold()" ontouchstart="startHold(event)" ontouchend="endHold()" disabled><span class="btn-ja">エクストリーム</span><span>XTREME</span><div class="progress-fill"></div></button>
+    <button class="finish-btn" data-side="left" data-type="over" onmousedown="startHold(event)" onmouseup="endHold()" ontouchstart="startHold(event)" ontouchend="endHold()" disabled><span class="btn-ja">オーバー</span><span>OVER</span><div class="progress-fill"></div></button>
+    <button class="finish-btn" data-side="left" data-type="burst" onmousedown="startHold(event)" onmouseup="endHold()" ontouchstart="startHold(event)" ontouchend="endHold()" disabled><span class="btn-ja">バースト</span><span>BURST</span><div class="progress-fill"></div></button>
+    <button class="finish-btn" data-side="left" data-type="spin" onmousedown="startHold(event)" onmouseup="endHold()" ontouchstart="startHold(event)" ontouchend="endHold()" disabled><span class="btn-ja">スピン</span><span>SPIN</span><div class="progress-fill"></div></button>
+    <div class="footer-spacer"></div>
+    <button class="finish-btn" data-side="right" data-type="spin" onmousedown="startHold(event)" onmouseup="endHold()" ontouchstart="startHold(event)" ontouchend="endHold()" disabled><span class="btn-ja">スピン</span><span>SPIN</span><div class="progress-fill"></div></button>
+    <button class="finish-btn" data-side="right" data-type="burst" onmousedown="startHold(event)" onmouseup="endHold()" ontouchstart="startHold(event)" ontouchend="endHold()" disabled><span class="btn-ja">バースト</span><span>BURST</span><div class="progress-fill"></div></button>
+    <button class="finish-btn" data-side="right" data-type="over" onmousedown="startHold(event)" onmouseup="endHold()" ontouchstart="startHold(event)" ontouchend="endHold()" disabled><span class="btn-ja">オーバー</span><span>OVER</span><div class="progress-fill"></div></button>
+    <button class="finish-btn" data-side="right" data-type="xtreme" onmousedown="startHold(event)" onmouseup="endHold()" ontouchstart="startHold(event)" ontouchend="endHold()" disabled><span class="btn-ja">エクストリーム</span><span>XTREME</span><div class="progress-fill"></div></button>
+  </div>
+</div>
+
+<div id="selection-overlay" onclick="closePicker()"><div class="picker-grid" id="picker-grid" onclick="event.stopPropagation()"></div></div>
+<div id="toast"></div>
+<div id="win-flash"></div>
+<div id="win-text"></div>
+<canvas id="fx-canvas"></canvas>
+
+<script>
+const SB_URL = 'https://yyrsscvofuoufkujetgf.supabase.co';
+const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl5cnNzY3ZvZnVvdWZrdWpldGdmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQwMzIxMjksImV4cCI6MjA3OTYwODEyOX0.mNPIAGFKhJ65dsSllBprGYk3yZfnJXfYmDcdljW8xA4';
+const BEY_IMG_BASE = 'https://beymetchannel.github.io/image-server/images/';
+const BLADER_IMG_BASE = 'https://beymetchannel.github.io/image-server/Blader/';
+
+let allBladers = [];
+let playedMap = {};
+
+const state = {
+  round: 1,
+  scores: { left: 0, right: 0 },
+  players: { left: null, right: null },
+  history: [],
+  selectedComboIdx: { left: [null, null, null, null], right: [null, null, null, null] }
 };
 
+/* API HELPER */
+async function sbFetch(path, method='GET', body=null) {
+  const opts = { method, headers: { 'apikey': SB_KEY, 'Authorization': `Bearer ${SB_KEY}`, 'Content-Type': 'application/json' } };
+  if (body) opts.body = JSON.stringify(body);
+  const r = await fetch(`${SB_URL}/rest/v1/${path}`, opts);
+  if (!r.ok) throw new Error(await r.text());
+  const text = await r.text();
+  return text ? JSON.parse(text) : null;
+}
 
-  
-  // === 全ブレーダー名をロード ===
-  async function loadBladers() {
-    const leftSelect = document.getElementById('leftBlader');
-    const rightSelect = document.getElementById('rightBlader');
-
-    leftSelect.innerHTML = '<option>Loading...</option>';
-    rightSelect.innerHTML = '<option>Loading...</option>';
-
-    const { data, error } = await supabase.from('UserDB').select('Name');
-
-    if (error) {
-      console.error('Supabase Error:', error.message);
-      leftSelect.innerHTML = '<option>取得エラー</option>';
-      rightSelect.innerHTML = '<option>取得エラー</option>';
-      return;
-    }
-
-    // 選択肢を再構築
-    leftSelect.innerHTML = '<option value="">ブレーダーを選択</option>';
-    rightSelect.innerHTML = '<option value="">ブレーダーを選択</option>';
-
-    data.forEach(item => {
-      const name = item.Name;
-      if (!name) return;
-
-      const optL = document.createElement('option');
-      const optR = document.createElement('option');
-      optL.value = optR.value = name;
-      optL.textContent = optR.textContent = name;
-
-      leftSelect.appendChild(optL);
-      rightSelect.appendChild(optR);
+window.onload = async () => {
+  try {
+    const [bladersData, matchData] = await Promise.all([
+      sbFetch('CUP_BLADER?select=*'),
+      sbFetch('CUP_MATCH?select=match_id,blader_id')
+    ]);
+    allBladers = bladersData || [];
+    allBladers.forEach(b => playedMap[b.blader_id] = new Set());
+    const matchGroups = {};
+    (matchData || []).forEach(m => {
+      if(!matchGroups[m.match_id]) matchGroups[m.match_id] = [];
+      matchGroups[m.match_id].push(m.blader_id);
     });
-  }
-
-  // === ベイ情報を反映 ===
-  async function updateBeyOptions(side) {
-    const bladerSelect = document.getElementById(`${side}Blader`);
-    const beySelect = document.getElementById(`${side}Bey`);
-    const selectedName = bladerSelect.value;
-
-    // 初期化
-    beySelect.innerHTML = '<option>Loading...</option>';
-
-    if (!selectedName) {
-      beySelect.innerHTML = '<option value="">ベイを選択</option>';
-      // ブレーダー変更でベイがリセットされたら画像もクリア
-      if (window && typeof window.clearCardImage === 'function') window.clearCardImage(side);
-      return;
-    }
-
-    // Supabaseでブレーダー情報を取得
-    const { data, error } = await supabase
-      .from('UserDB')
-      .select('*')
-      .eq('Name', selectedName)
-      .maybeSingle();
-
-    if (error || !data) {
-      console.error('UserDB検索エラー:', error?.message || 'データなし');
-      beySelect.innerHTML = '<option value="">取得エラー</option>';
-      return;
-    }
-
-    // Blade, Ratchet, Bitを組み合わせて追加
-    const combos = [
-      `${data.Blade1 || ''} ${data.Ratchet1 || ''} ${data.Bit1 || ''}`.trim(),
-      `${data.Blade2 || ''} ${data.Ratchet2 || ''} ${data.Bit2 || ''}`.trim(),
-      `${data.Blade3 || ''} ${data.Ratchet3 || ''} ${data.Bit3 || ''}`.trim(),
-    ].filter(txt => txt.length > 0);
-
-    if (combos.length === 0) {
-      beySelect.innerHTML = '<option>登録なし</option>';
-      if (window && typeof window.clearCardImage === 'function') window.clearCardImage(side);
-      return;
-    }
-
-    // ベイリストを再構築
-    beySelect.innerHTML = '';
-    const placeholder = document.createElement('option');
-    placeholder.value = '';
-    placeholder.textContent = 'ベイを選択';
-    beySelect.appendChild(placeholder);
-    beySelect.value = '';
-    // 初期化時に背景画像をクリア（ベイ選択前は表示しない）
-    if (window && typeof window.clearCardImage === 'function') window.clearCardImage(side);
-
-    // その後にベイを追加
-    combos.forEach(c => {
-      const opt = document.createElement('option');
-      opt.value = c;
-      opt.textContent = c;
-      beySelect.appendChild(opt);
+    Object.values(matchGroups).forEach(players => {
+      if(players.length === 2) { 
+        playedMap[players[0]]?.add(players[1]);
+        playedMap[players[1]]?.add(players[0]);
+      }
     });
-  }
+    updateDropdowns();
+  } catch (e) { toast("LOAD ERROR: " + e.message); }
+};
 
-  // ベイ選択時にBladeDBから画像を取得して背景に設定
-  async function updateBladeImage(side) {
-    const beySelectId = side === 'left' ? 'leftBey' : 'rightBey';
-    const bgDivId = side === 'left' ? 'leftCardBg' : 'rightCardBg';
+/* --- CUSTOM DROPDOWN LOGIC --- */
+function toggleDropdown(e, side) {
+  e.stopPropagation();
+  // 1バトル目が確定済みならロック
+  if (state.history.length > 0 || state.round > 1) return;
+  const list = document.getElementById(`list-${side}`);
+  const isShow = list.classList.contains('show');
+  closeAllDropdowns();
+  if(!isShow) list.classList.add('show');
+}
+
+function closeAllDropdowns() {
+  document.querySelectorAll('.dropdown-list').forEach(l => l.classList.remove('show'));
+}
+
+function updateDropdowns() {
+  const renderList = (side, otherId) => {
+    const listEl = document.getElementById(`list-${side}`);
+    const excludeSet = otherId ? playedMap[otherId] : new Set();
     
-    const beySelect = document.getElementById(beySelectId);
-    const selectedBey = beySelect.value;
-    const bgDiv = document.getElementById(bgDivId);
+    listEl.innerHTML = `<div class="dropdown-item" onclick="selectBlader('${side}', null)"><span>SELECT...</span></div>`;
     
-    if (!selectedBey) {
-      // フェードアウト後に画像をクリア
-      bgDiv.style.opacity = '0';
-      setTimeout(() => {
-        bgDiv.style.backgroundImage = '';
-        bgDiv.style.opacity = '0.5';
-      }, 1000);
-      return;
-    }
-    
-    // ベイ名から最初の単語（ブレード名）を抽出
-    const bladeName = selectedBey.split(' ')[0];
-    
-    try {
-      // BladeDBから検索
-      const { data, error } = await supabase
-        .from('BladeDB')
-        .select('Image')
-        .eq('BladeName', bladeName)
-        .single();
+    allBladers.forEach(b => {
+      // 既存の除外条件：対戦相手と同じID
+      if(b.blader_id === otherId) return;
+      // 既存の除外条件：対戦済み
+      if(excludeSet && excludeSet.has(b.blader_id)) return;
       
-      // エラー、またはデータが無い／Imageフィールドが空の場合は画像をクリア
-      if (error || !data || !data.Image) {
-        console.log('Image not found for blade:', bladeName);
-        bgDiv.style.opacity = '0';
-        setTimeout(() => {
-          bgDiv.style.backgroundImage = '';
-          bgDiv.style.opacity = '0.5';
-        }, 1000);
-        return;
-      }
+      // 【追加】ピックアップ条件：'test' IDをリストに含めない
+      if(b.blader_id === 'test') return;
 
-      // 画像がある場合は即時表示（フェードインは行わない）
-      bgDiv.style.backgroundImage = `url('${data.Image}')`;
-      bgDiv.style.opacity = '0.5';
-    } catch (err) {
-      console.error('Error fetching blade image:', err);
-    }
-  }
-
-  document.addEventListener('DOMContentLoaded', () => {
-    loadBladers();
-
-    // 左右のブレーダー選択変更時
-    document.getElementById('leftBlader').addEventListener('change', () => updateBeyOptions('left'));
-    document.getElementById('rightBlader').addEventListener('change', () => updateBeyOptions('right'));
-    
-    // 左右のベイ選択変更時に画像を更新
-    document.getElementById('leftBey').addEventListener('change', () => updateBladeImage('left'));
-    document.getElementById('rightBey').addEventListener('change', () => updateBladeImage('right'));
-  });
-</script>
-<script>
-  const menuIcon = document.getElementById('menuIcon');
-  const menuPanel = document.getElementById('menuPanel');
-  const bladerBtn = document.getElementById('bladerBtn');
-  const bladerSubmenu = document.getElementById('bladerSubmenu');
-  const battleOptions = document.getElementById('battleOptions');
-  const dataBtn = menuPanel.querySelectorAll('.menu-btn')[2];
-  const dataSubmenu = document.getElementById('dataSubmenu');
-  const bladerList = document.getElementById('bladerList');
-  const resultBtn = menuPanel.querySelectorAll('.menu-btn')[1]; 
-  const resultSubmenu = document.getElementById('resultSubmenu');
-  const battleData = JSON.parse(localStorage.getItem('battleData') || '[]');
-  
-  // 非モジュール側で背景画像をフェードアウト・クリアする関数
-  function clearCardImage(side) {
-    const bgDivId = side === 'left' ? 'leftCardBg' : 'rightCardBg';
-    const bgDiv = document.getElementById(bgDivId);
-    if (!bgDiv) return;
-    bgDiv.style.opacity = '0';
-    setTimeout(() => {
-      bgDiv.style.backgroundImage = '';
-      bgDiv.style.opacity = '0.5';
-    }, 1000);
-  }
-
-
-
-
-  // タイムスタンプフォーマット関数は既存のものを使用
-  function formatTimestamp(date) {
-    const yyyy = date.getFullYear();
-    const mm = String(date.getMonth() + 1).padStart(2, '0'); 
-    const dd = String(date.getDate()).padStart(2, '0');
-    const hh = String(date.getHours()).padStart(2, '0');
-    const min = String(date.getMinutes()).padStart(2, '0');
-    
-    return `${yyyy}/${mm}/${dd} ${hh}:${min}`;
-  }
-
-
-  dataBtn.addEventListener('click', () => {
-    if(openedSubmenu && openedSubmenu !== dataSubmenu){
-      openedSubmenu.classList.remove('active'); 
-    }
-    
-    const isActive = dataSubmenu.classList.contains('active');
-    dataSubmenu.classList.toggle('active', !isActive);
-
-    openedSubmenu = dataSubmenu.classList.contains('active') ? dataSubmenu : null;
-
-    if(dataSubmenu.classList.contains('active')){
-      showDataSubmenu();
-    }
-  });
-
-  menuIcon.addEventListener('click', () => {
-    const isActive = menuPanel.classList.contains('active');
-
-    menuPanel.classList.toggle('active', !isActive);
-    optionOverlay.classList.toggle('active', !isActive);
-
-    bladerSubmenu.classList.remove('active');
-    dataSubmenu.classList.remove('active');
-    resultSubmenu.classList.remove('active');
-    battleOptions.classList.add('hidden');
-
-    openedSubmenu = null;
-  });
-
-
-
-  let openedSubmenu = null; 
-
-  bladerBtn.addEventListener('click', () => {
-    if(openedSubmenu && openedSubmenu !== bladerSubmenu){
-      openedSubmenu.classList.remove('active');
-    }
-    
-    const isActive = bladerSubmenu.classList.contains('active');
-    bladerSubmenu.classList.toggle('active', !isActive);
-
-    openedSubmenu = bladerSubmenu.classList.contains('active') ? bladerSubmenu : null;
-  });
-
-
-
-  function updateBladerSelects() {
-    const fullList = [...bladers];
-
-    const leftSelect = document.getElementById('leftBlader');
-    const rightSelect = document.getElementById('rightBlader');
-    const selects = [leftSelect, rightSelect];
-
-    selects.forEach(select => {
-      const currentValue = select.value;
-      select.innerHTML = '';
-      fullList.forEach(name => {
-        const option = document.createElement('option');
-        option.value = name;
-        option.textContent = name;
-        select.appendChild(option);
-      });
-
-      if (fullList.includes(currentValue)) {
-        select.value = currentValue;
-      } else {
-        select.value = ''; 
-      }
-      select._prevValue = select.value;
+      const item = document.createElement('div');
+      item.className = 'dropdown-item';
+      item.onclick = (e) => { e.stopPropagation(); selectBlader(side, b.blader_id); };
+      item.innerHTML = `
+        <img src="${BLADER_IMG_BASE}${b.blader_id}.jpg" onerror="this.src='${BLADER_IMG_BASE}default.jpg'">
+        <span>${b.name}</span>
+      `;
+      listEl.appendChild(item);
     });
-
-    function handleSelectChange(side) {
-      const leftSelect = document.getElementById('leftBlader');
-      const rightSelect = document.getElementById('rightBlader');
-
-      // 左右で同じブレーダーを選択したら右側を自動で切り替え
-      if (leftSelect.value && leftSelect.value === rightSelect.value) {
-        if (side === 'L') {
-          rightSelect.selectedIndex = 0;
-        } else {
-          leftSelect.selectedIndex = 0;
-        }
-      }
-    }
-
-    leftSelect.addEventListener('change', () => handleSelectChange('L'));
-    rightSelect.addEventListener('change', () => handleSelectChange('R'));
-  }
-
-
-  document.querySelectorAll('.clear-select-btn').forEach(btn => {
-    btn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      const side = btn.dataset.side;
-      const select = document.getElementById(side === 'L' ? 'leftBlader' : 'rightBlader');
-      select.value = '';
-    });
-  });
-
-
-
-
-
-
-
-
-
-
-
-
-  let scores = { L: 0, R: 0 };
-  let battleResults = {};
-  let currentBattle = 1;
-  let lastBattleIndex = 0;
-  let openedButton = null; 
-
-  function toggleBattleOptions(num=null, side=null) {
-    const resetBtn = document.querySelector('.reset-btn');
-
-    if(openedSubmenu) {
-      bladerSubmenu?.classList.remove('active');
-      dataSubmenu?.classList.remove('active');
-      resultSubmenu?.classList.remove('active');
-      openedSubmenu = null;
-      optionOverlay.classList.remove('active');
-      return;
-    }
-
-    if (currentBattle === 6) return;
-
-    if(num===null){
-      num = Math.max(...Object.keys(battleResults).map(Number),0)+1;
-    }
-
-    const btnId = `battle${num}`;
-    const btn = document.getElementById(btnId);
-    const optionsEl = document.getElementById('battleOptions');
-    const leftGroup = document.getElementById('leftOptions');
-    const rightGroup = document.getElementById('rightOptions');
-    const leftBlader = document.getElementById('leftBlader');
-    const leftBey = document.getElementById('leftBey');
-    const rightBlader = document.getElementById('rightBlader');
-    const rightBey = document.getElementById('rightBey');
-
-    let missing = false;
-
-    [leftBlader, leftBey, rightBlader, rightBey].forEach(sel => {
-      if (!sel.value) {
-        sel.classList.add('invalid');
-        missing = true;
-      } else {
-        sel.classList.remove('invalid');
-      }
-    });
-
-    if (missing) return;
-
-    if(openedButton === btn){
-      document.getElementById('battleOptions').classList.add('hidden');
-      optionOverlay.classList.remove('active');
-      openedButton = null;
-
-      resetBtn.disabled = false;
-      resetBtn.style.opacity = 1;
-      return;
-    }
-
-    currentBattle = num;
-    openedButton = btn;
-    optionsEl.classList.remove('hidden');
-    optionOverlay.classList.add('active');
-
-    if(side==='L'){
-      leftGroup.style.display='grid';
-      rightGroup.style.display='none';
-    } else if(side==='R'){
-      leftGroup.style.display='none';
-      rightGroup.style.display='grid';
-    } else {
-      leftGroup.style.display='grid';
-      rightGroup.style.display='grid';
-    }
-
-    resetBtn.disabled = true;
-    resetBtn.style.opacity = 0.5;
-
-    if (!optionOverlay.dataset.listenerAdded) {
-      optionOverlay.addEventListener('click', () => {
-        optionsEl.classList.add('hidden');
-        optionOverlay.classList.remove('active');
-        openedButton = null;
-        resetBtn.disabled = false;
-        resetBtn.style.opacity = 1;
-      });
-      optionOverlay.dataset.listenerAdded = "true"; 
-    }
-  }
-
-function selectResult(side, type) {
-  const pointMap = { SF:1, BF:2, OF:2, XF:3 };
-  const labelMap = { SF:'SPIN', BF:'BURST', OF:'OVER', XF:'XTREME' };
-  const leftScoreEl = document.getElementById('leftScore');
-  const rightScoreEl = document.getElementById('rightScore');
-  const resetBtn = document.querySelector('.reset-btn');
-  const btn = document.getElementById(`battle${currentBattle}`);
-  const optionOverlay = document.getElementById('optionOverlay');
-
-  btn.classList.remove("spin","burst","over","xtreme");
-
-  if(battleResults[currentBattle]){
-    const prev = battleResults[currentBattle];
-    scores[prev.side] -= pointMap[prev.type];
-  }
-
-  const leftBlader = document.getElementById('leftBlader').value;
-  const rightBlader = document.getElementById('rightBlader').value;
-  const leftBey = document.getElementById('leftBey').value;
-  const rightBey = document.getElementById('rightBey').value;
-
-  battleResults[currentBattle] = {
-    side,
-    type,
-    leftBlader,
-    rightBlader,
-    leftBey,
-    rightBey
   };
-
-  scores[side] += pointMap[type];
-  lastBattleIndex = currentBattle;
-
-  leftScoreEl.textContent = scores.L;
-  rightScoreEl.textContent = scores.R;
-
-  btn.textContent = labelMap[type];
-  btn.classList.remove('tab-left','tab-right','no-glow');
-  btn.classList.add(side==='L' ? 'tab-left' : 'tab-right', 'no-glow');
-
-  if (type === "SF") btn.classList.add("spin");
-  if (type === "BF") btn.classList.add("burst");
-  if (type === "OF") btn.classList.add("over");
-  if (type === "XF") btn.classList.add("xtreme");
-
-
-
-  const leftBeySelect = document.getElementById('leftBey');
-  const rightBeySelect = document.getElementById('rightBey');
-
-  if ([1,2,4].includes(currentBattle)) {
-
-    Array.from(leftBeySelect.options).forEach(opt => {
-      if (opt.value === leftBey) opt.disabled = true;
-    });
-    Array.from(rightBeySelect.options).forEach(opt => {
-      if (opt.value === rightBey) opt.disabled = true;
-    });
-
-  } else if (currentBattle === 3) {
-    Array.from(leftBeySelect.options).forEach(opt => opt.disabled = false);
-    Array.from(rightBeySelect.options).forEach(opt => opt.disabled = false);
-
-  }
-
-  leftBeySelect.value = "";
-  rightBeySelect.value = "";
-  // ベイクリア時に画像をフェードアウト（モジュール関数ではなく非モジュール側で処理）
-  clearCardImage('left');
-  clearCardImage('right');
-
-
-  document.getElementById('battleOptions').classList.add('hidden');
-  optionOverlay.classList.remove('active');
-  openedButton = null;
-
-  resetBtn.disabled = false;
-  resetBtn.style.opacity = 1;
-
-  checkForClearOrNext();
+  renderList('left', state.players.right?.blader_id);
+  renderList('right', state.players.left?.blader_id);
 }
 
+function selectBlader(side, id) {
+  const blader = allBladers.find(b => b.blader_id == id);
+  state.players[side] = blader || null;
+  state.selectedComboIdx[side] = [null, null, null, null];
+  
+  const trigger = document.getElementById(`trigger-${side}`);
+  if(blader) {
+    trigger.innerHTML = `<img src="${BLADER_IMG_BASE}${id}.jpg" onerror="this.src='${BLADER_IMG_BASE}default.jpg'"><span>${blader.name}</span>`;
+  } else {
+    trigger.textContent = 'SELECT...';
+  }
 
+  for(let i=1; i<=3; i++) {
+    const slot = document.getElementById(`slot-${side}-${i}`);
+    if (slot) { slot.innerHTML = ''; slot.classList.remove('filled', 'active'); }
+    document.getElementById(`label-${side}-${i}`).textContent = '';
+  }
 
-function checkForClearOrNext() {
-    const hasClear = document.getElementById('clearBtn');
-    const leftScoreEl = document.getElementById('leftScore');
-    const rightScoreEl = document.getElementById('rightScore');
-
-    // バトル5終了時の処理
-    if (currentBattle === 5) {
-        // CLEARボタン生成
-        if (!hasClear) {
-            const clearBtn = document.createElement('button');
-            clearBtn.className = 'battle-btn clear-btn';
-            clearBtn.id = 'clearBtn';
-            clearBtn.textContent = 'CLEAR';
-            clearBtn.onclick = () => {
-                window.insertAllBattles(battleResults);
-                clearAll();
-            };
-            document.getElementById('battleBtnWrapper').appendChild(clearBtn);
-            adjustButtonHeights();
-        }
-
-        // スコアハイライト
-        if (scores.L > scores.R) {
-            leftScoreEl.style.color = 'yellow';
-            leftScoreEl.style.textShadow = '0 0 25px yellow';
-        } else if (scores.R > scores.L) {
-            rightScoreEl.style.color = 'yellow';
-            rightScoreEl.style.textShadow = '0 0 25px yellow';
-        } else { // 同点
-            leftScoreEl.style.color = 'yellow';
-            leftScoreEl.style.textShadow = '0 0 25px yellow';
-            rightScoreEl.style.color = 'yellow';
-            rightScoreEl.style.textShadow = '0 0 25px yellow';
-        }
-    } else {
-        // バトル5未満なら次のバトルを表示
-        revealNextBattleButton(currentBattle);
-    }
+  updateDropdowns();
+  updateUI();
+  closeAllDropdowns();
 }
 
+/* --- GAME LOGIC (v3.6 左右振り分けピッカー実装) --- */
+function openPicker(side, roundIdx) {
+  if (!state.players[side] || roundIdx !== state.round) return;
+  const p = state.players[side];
+  const testP = allBladers.find(b => String(b.blader_id) === 'test') || {};
 
+  const combos = [
+    { name: p.combo_1 || testP.combo_1 || 'No Data', blade: p.blade_1 || testP.blade_1 || 'default' },
+    { name: p.combo_2 || testP.combo_2 || 'No Data', blade: p.blade_2 || testP.blade_2 || 'default' },
+    { name: p.combo_3 || testP.combo_3 || 'No Data', blade: p.blade_3 || testP.blade_3 || 'default' }
+  ];
 
-  function revealNextBattleButton(currentIndex){
-    const nextIndex=currentIndex+1;
-    if(nextIndex>5) return;
-    const wrapper=document.getElementById('battleBtnWrapper');
-    if(!document.getElementById(`battle${nextIndex}`)){
-      const nextBtn=document.createElement('button');
-      nextBtn.className='battle-btn';
-      nextBtn.id=`battle${nextIndex}`;
-      nextBtn.textContent=getOrdinalSuffix(nextIndex);
-      nextBtn.onclick=()=>toggleBattleOptions(nextIndex);
-      wrapper.appendChild(nextBtn);
-    }
-    adjustButtonHeights();
-  }
+  const grid = document.getElementById('picker-grid');
+  grid.innerHTML = combos.map((c, i) => {
+    const isUsed = state.selectedComboIdx[side].includes(i + 1);
+    return `<div class="pick-item ${isUsed ? 'used' : ''}" onclick="selectBey('${side}', ${roundIdx}, ${i+1}, '${c.blade}')">
+      <div class="pick-img"><img src="${BEY_IMG_BASE}${c.blade}.png" onerror="this.src='${BEY_IMG_BASE}default.png'"></div>
+      <div class="pick-name">${c.name}</div>
+    </div>`;
+  }).join('');
 
-  function undoLastBattle(){
-    if(!lastBattleIndex||!battleResults[lastBattleIndex]) return;
-    const {side,type}=battleResults[lastBattleIndex];
-    const pointMap={SF:1,BF:2,OF:2,XF:3};
+  // 左右振り分けロジックの適用！
+  const overlay = document.getElementById('selection-overlay');
+  overlay.style.justifyContent = (side === 'left') ? 'flex-start' : 'flex-end';
+  overlay.style.display = 'flex';
+}
 
-    scores[side]-=pointMap[type];
-    document.getElementById('leftScore').textContent=scores.L;
-    document.getElementById('rightScore').textContent=scores.R;
+function selectBey(side, roundIdx, comboIdx, bladeName) {
+  state.selectedComboIdx[side][roundIdx] = comboIdx;
+  const slot = document.getElementById(`slot-${side}-${roundIdx}`);
+  slot.innerHTML = `<img src="${BEY_IMG_BASE}${bladeName}.png">`;
+  slot.classList.add('filled');
+  closePicker(); updateUI();
+}
+function closePicker() { document.getElementById('selection-overlay').style.display = 'none'; }
 
-    const btn=document.getElementById(`battle${lastBattleIndex}`);
-    btn.textContent=getOrdinalSuffix(lastBattleIndex);
-    btn.classList.remove('tab-left','tab-right','no-glow');
-
-    btn.classList.remove('tab-left', 'tab-right', 'no-glow', "spin", "burst", "over", "xtreme");
-    btn.removeAttribute("style");
-
-    for(let i=lastBattleIndex+1;i<=7;i++){
-      const b=document.getElementById(`battle${i}`);
-      if(b)b.remove();
-      delete battleResults[i];
-    }
-
-    delete battleResults[lastBattleIndex];
-    lastBattleIndex=Math.max(...Object.keys(battleResults).map(Number),0)||0;
-
-    document.getElementById('leftScore').style.color='#fff';
-    document.getElementById('rightScore').style.color='#fff';
-    document.getElementById('leftScore').style.textShadow='0 0 25px rgba(255,255,255,0.6)';
-    document.getElementById('rightScore').style.textShadow='0 0 25px rgba(255,255,255,0.6)';
-    const clearBtn=document.getElementById('clearBtn');
-    if(clearBtn) clearBtn.remove();
-
-    adjustButtonHeights();
-  }
-
-  function clearAll(){
-
-    scores={L:0,R:0};
-    battleResults={};
-    currentBattle=1;
-    lastBattleIndex=0;
-    openedButton = null;
-
-    document.getElementById('leftScore').textContent=0;
-    document.getElementById('rightScore').textContent=0;
-    document.getElementById('leftScore').style.color='#fff';
-    document.getElementById('rightScore').style.color='#fff';
-    document.getElementById('leftScore').style.textShadow='0 0 25px rgba(255,255,255,0.6)';
-    document.getElementById('rightScore').style.textShadow='0 0 25px rgba(255,255,255,0.6)';
-
-    const wrapper=document.getElementById('battleBtnWrapper');
-    wrapper.innerHTML=`<button class="battle-btn" id="battle1" onclick="toggleBattleOptions(1)">1st</button>`;
-
-    // === ブレーダー・ベイの選択を初期化 ===
-    const leftBlader = document.getElementById('leftBlader');
-    const rightBlader = document.getElementById('rightBlader');
-    const leftBey = document.getElementById('leftBey');
-    const rightBey = document.getElementById('rightBey');
-    leftBlader.selectedIndex = 0;
-    rightBlader.selectedIndex = 0;
-    leftBey.innerHTML = '<option value="">選択してください</option>';
-    rightBey.innerHTML = '<option value="">選択してください</option>';
-
-    adjustButtonHeights();
-  }
-
-  function adjustButtonHeights() {
-    const wrapper = document.getElementById('battleBtnWrapper');
-    const buttons = Array.from(wrapper.querySelectorAll('.battle-btn'));
-    const resetBtn = document.querySelector('.reset-btn');
-    
-    const cardHeight = window.innerHeight * 0.9;
-    const resetHeight = resetBtn ? resetBtn.offsetHeight : 0;
-
-    if(buttons.length < 3) {
-      wrapper.style.justifyContent = 'center';
-    } else {
-      wrapper.style.justifyContent = 'flex-start';
-    }
-
-    const gap = 5; 
-    const availableHeight = cardHeight - resetHeight - ((buttons.length -1) * gap);
-    const btnHeight = Math.min(60, availableHeight / buttons.length);
-
-    buttons.forEach(btn => btn.style.height = btnHeight + 'px');
-  }
-
-
-  function getOrdinalSuffix(num) {
-    if (num % 100 >= 11 && num % 100 <= 13) return num + 'th';
-    switch (num % 10) {
-      case 1: return num + 'st';
-      case 2: return num + 'nd';
-      case 3: return num + 'rd';
-      default: return num + 'th';
-    }
-  }
-
-
-  document.addEventListener('click', (event) => {
-    const isClickInsideMenu = menuPanel.contains(event.target) 
-                            || bladerSubmenu.contains(event.target)
-                            || dataSubmenu.contains(event.target)
-                            || resultSubmenu.contains(event.target)
-                            || menuIcon.contains(event.target)
-                            || bladerBtn.contains(event.target);
-
-    if (!isClickInsideMenu) {
-      menuPanel.classList.remove('active');
-      bladerSubmenu.classList.remove('active');
-      dataSubmenu.classList.remove('active');
-      resultSubmenu.classList.remove('active');
-      openedSubmenu = null; 
-    }
-  });
-
-
-
-
-
-
-
-
-  function showDataSubmenu() {
-    const dataList = JSON.parse(localStorage.getItem('battleData') || '[]');
-    dataList.sort((a,b)=>new Date(b.timestamp) - new Date(a.timestamp));
-
-    const container = document.getElementById('dataBattleList');
-    container.innerHTML = '';
-
-    const headerDiv = document.createElement('div');
-    headerDiv.className = 'battleDataHeader';
-    headerDiv.innerHTML = `
-      <span>Blader</span>
-      <span>Score</span>
-      <span>Time</span>
-      <span></span>
-    `;
-    container.appendChild(headerDiv);
-
-    dataList.forEach((d, index) => {
-      const date = new Date(d.timestamp);
-      const hhmm = date.getHours().toString().padStart(2,'0') + ':' + date.getMinutes().toString().padStart(2,'0');
-
-      const div = document.createElement('div');
-      div.className = 'battleDataItem';
-      div.style.display = 'grid';
-      div.style.gridTemplateColumns = '2fr 1fr 1fr auto';
-      div.style.alignItems = 'center';
-
-      div.innerHTML = `
-        <span>${d.blader}</span>
-        <span>${d.score}-${d.opponentScore}</span>
-        <span>${hhmm}</span>
-        <button class="small-del-btn">Del</button>
-      `;
-
-      div.querySelector('.small-del-btn').addEventListener('click', (e) => {
-        e.stopPropagation();
-        if(confirm("このデータを削除してもよろしいですか？")) {
-          dataList.splice(index, 1);
-          showDataSubmenu(); 
-        }
-      });
-
-      container.appendChild(div);
-    });
-  }
-
-
-  function showResultSubmenu() {
-    const dataList = JSON.parse(localStorage.getItem('battleData') || '[]');
-    dataList.sort((a,b)=>new Date(b.timestamp) - new Date(a.timestamp)); 
-
-    const container = document.getElementById('resultBattleList');
-    container.innerHTML = '';
-
-    const summary = {};
-
-    dataList.forEach(d => {
-      if(!summary[d.blader]){
-        summary[d.blader] = {battle:0, win:0, lose:0, score:0, loss:0};
+function updateUI() {
+  document.getElementById('battle-round-disp').textContent = Math.min(state.round, 3).toString().padStart(2, '0');
+  ['left', 'right'].forEach(side => {
+    for(let i=1; i<=3; i++) {
+      const slot = document.getElementById(`slot-${side}-${i}`);
+      if(slot) {
+        slot.classList.toggle('active', i === state.round && !state.selectedComboIdx[side][i]);
+        slot.classList.toggle('locked', i > state.round);
       }
-      summary[d.blader].battle++;
-      summary[d.blader].score += d.score;
-      summary[d.blader].loss += d.opponentScore;
-      if(d.score > d.opponentScore) summary[d.blader].win++;
-      else summary[d.blader].lose++;
-    });
-
-
-  const headerDiv = document.createElement('div');
-  headerDiv.className = 'battleDataHeader';
-  headerDiv.style.display = 'grid';
-  headerDiv.style.gridTemplateColumns = '2fr 1fr 1fr 1fr 1fr 2fr 1fr';
-  headerDiv.innerHTML = `
-    <span>Blader</span>
-    <span>Battle</span>
-    <span>Win</span>
-    <span>Lose</span>
-    <span>Win%</span>
-    <span>Score</span>
-    <span>Diff</span>
-  `;
-  container.appendChild(headerDiv);
-
-    Object.entries(summary).forEach(([blader, stats]) => {
-      const winRate = stats.battle ? Math.floor((stats.win / stats.battle) * 100) + '%' : '0%';
-      const diff = stats.score - stats.loss;
-      const div = document.createElement('div');
-      div.className = 'battleDataItem';
-      div.style.display = 'grid';
-      div.style.gridTemplateColumns = '2fr 1fr 1fr 1fr 1fr 2fr 1fr'; 
-      div.innerHTML = `
-        <span>${blader}</span>
-        <span>${stats.battle}</span>
-        <span>${stats.win}</span>
-        <span>${stats.lose}</span>
-        <span>${winRate}</span>
-        <span>${stats.score}-${stats.loss}</span>
-        <span>${diff}</span>
-      `;
-      container.appendChild(div);
-    });
-  }
-
-  let vh = window.innerHeight * 0.01;
-  document.documentElement.style.setProperty('--vh', `${vh}px`);
-
-
-
-
-  resultBtn.addEventListener('click', () => {
-    if(openedSubmenu && openedSubmenu !== resultSubmenu){
-      openedSubmenu.classList.remove('active'); 
-    }
-    const isActive = resultSubmenu.classList.contains('active');
-    resultSubmenu.classList.toggle('active', !isActive);
-    openedSubmenu = resultSubmenu.classList.contains('active') ? resultSubmenu : null;
-
-    if(resultSubmenu.classList.contains('active')){
-      showResultSubmenu();
     }
   });
 
+  // 1バトル目確定後はプルダウンをロック
+  const bladerLocked = state.history.length > 0 || state.round > 1;
+  ['left', 'right'].forEach(side => {
+    const trigger = document.getElementById(`trigger-${side}`);
+    if (bladerLocked) {
+      trigger.style.opacity = '0.5';
+      trigger.style.cursor = 'default';
+    } else {
+      trigger.style.opacity = '';
+      trigger.style.cursor = '';
+    }
+  });
 
+  const bothSelected = state.round <= 3 && state.selectedComboIdx.left[state.round] && state.selectedComboIdx.right[state.round];
+  document.querySelectorAll('.finish-btn').forEach(b => b.disabled = !bothSelected || state.history.length === 3);
+  document.getElementById('undo-btn').style.display = state.history.length > 0 ? 'block' : 'none';
+  const saveBtn = document.getElementById('save-btn');
+  if (state.history.length === 3) saveBtn.classList.add('ready'); else saveBtn.classList.remove('ready');
+}
 
-  document.addEventListener("DOMContentLoaded", function() {
-      const resultClearBtn = document.getElementById("resultClearBtn");
-      const resultBattleList = document.getElementById("resultBattleList");
-      const leftScore = document.getElementById("leftScore");
-      const rightScore = document.getElementById("rightScore");
+/* HOLD LOGIC */
+let holdTimer, holdBtn;
 
+function getBtnColor(btn) {
+  const type = btn.dataset.type;
+  if (type === 'spin')    return '#00c8ff';
+  if (type === 'burst')   return '#ff7700';
+  if (type === 'over')    return '#ffd700';
+  if (type === 'xtreme')  return '#ff4fc8';
+  if (btn.id === 'undo-btn') return '#ff2020';
+  if (btn.id === 'save-btn') return '#ffd700';
+  return '#ffffff';
+}
 
+function fireGaugeBurst(btn) {
+  btn.classList.add('gauge-full');
+  const color = getBtnColor(btn);
 
+  // パーティクル生成
+  const container = document.createElement('div');
+  container.className = 'btn-burst';
+  const count = 14;
+  for (let i = 0; i < count; i++) {
+    const p = document.createElement('span');
+    const angle = (360 / count) * i;
+    const rad = angle * Math.PI / 180;
+    const dist = 40 + Math.random() * 30;
+    p.style.cssText = `
+      background: ${color};
+      box-shadow: 0 0 6px ${color};
+      left: 50%; top: 50%;
+      --dx: ${Math.cos(rad) * dist}px;
+      --dy: ${Math.sin(rad) * dist}px;
+    `;
+    container.appendChild(p);
+  }
+  btn.appendChild(container);
 
-      resultClearBtn.addEventListener("click", function() {
+  setTimeout(() => {
+    btn.classList.remove('gauge-full');
+    container.remove();
+  }, 500);
+}
 
-          if (confirm("全バトルデータを削除してもよろしいですか？")) {
+function startHold(e) {
+  holdBtn = e.currentTarget;
+  if (holdBtn.id === 'save-btn' && !holdBtn.classList.contains('ready')) return;
+  holdBtn.classList.add('holding');
+  holdTimer = setTimeout(() => {
+    fireGaugeBurst(holdBtn);
+    setTimeout(() => { executeAction(holdBtn); endHold(); }, 350);
+  }, 500);
+}
+function endHold() {
+  clearTimeout(holdTimer);
+  if (holdBtn) holdBtn.classList.remove('holding');
+}
+function executeAction(btn) {
+  if (btn.id === 'undo-btn') undoBattle();
+  else if (btn.id === 'save-btn') submitData();
+  else if (btn.classList.contains('finish-btn')) confirmFinish();
+}
 
-              localStorage.removeItem("battleData"); 
-              localStorage.removeItem("resultData");
+/* ══════════════════════════════════════
+   WIN EFFECT SYSTEM  v2 (type-specific)
+══════════════════════════════════════ */
 
-              showResultSubmenu();
-              showDataSubmenu();
-          }
+// 基本色：side依存。xtreme時のみ虹
+const SIDE_COLORS = { left: '#00c8ff', right: '#ff4466' };
+const RAINBOW = ['#00c8ff','#7b2fff','#ff4fc8','#00e5ff','#b44fff','#ff66d8','#40d9ff'];
+
+function getRainbowColor(t) {
+  const i = Math.floor(t * RAINBOW.length) % RAINBOW.length;
+  return RAINBOW[i];
+}
+
+function fireWinEffect(side, type) {
+  const baseColor = SIDE_COLORS[side];
+  const isXtreme  = type === 'xtreme';
+
+  // ── 共通: スコアポンプ
+  const scoreEl = document.getElementById(`score-${side}`);
+  scoreEl.classList.remove('pump');
+  void scoreEl.offsetWidth;
+  scoreEl.classList.add('pump');
+  setTimeout(() => scoreEl.classList.remove('pump'), 700);
+
+  // ── 共通: サイドフラッシュ
+  const flashColor = isXtreme ? 'rgba(255,255,255,0.7)' : baseColor;
+  const flash = document.getElementById('win-flash');
+  flash.style.background = flashColor;
+  flash.classList.remove('active'); void flash.offsetWidth; flash.classList.add('active');
+
+  const sideFlash = document.createElement('div');
+  sideFlash.style.cssText = `position:fixed;top:0;bottom:0;${side}:0;width:50%;
+    background:${flashColor};opacity:0.25;pointer-events:none;z-index:800;
+    animation:sideFlash 0.7s ease-out forwards;`;
+  document.body.appendChild(sideFlash);
+  setTimeout(() => sideFlash.remove(), 800);
+
+  // ── 共通: WIN TEXT
+  const winLabels = { spin:'SPIN!', burst:'BURST!', over:'OVER!', xtreme:'XTREME!!!' };
+  const winEl = document.getElementById('win-text');
+  winEl.textContent = winLabels[type] || 'WIN!';
+  if (isXtreme) {
+    winEl.style.background = 'linear-gradient(90deg,#00c8ff,#7b2fff,#ff4fc8,#00e5ff,#b44fff,#ff66d8)';
+    winEl.style.webkitBackgroundClip = 'text';
+    winEl.style.webkitTextFillColor = 'transparent';
+    winEl.style.textShadow = 'none';
+    winEl.style.filter = 'drop-shadow(0 0 16px #fff)';
+  } else {
+    winEl.style.background = '';
+    winEl.style.webkitBackgroundClip = '';
+    winEl.style.webkitTextFillColor = '';
+    winEl.style.color = baseColor;
+    winEl.style.textShadow = `0 0 30px ${baseColor}, 0 0 60px ${baseColor}`;
+    winEl.style.filter = '';
+  }
+  winEl.className = '';
+  void winEl.offsetWidth;
+  winEl.className = `show-${side} animate`;
+  setTimeout(() => { winEl.className = ''; }, 1300);
+
+  // ── タイプ別エフェクト振り分け
+  const canvas = document.getElementById('fx-canvas');
+  canvas.width  = window.innerWidth;
+  canvas.height = window.innerHeight;
+  const ctx = canvas.getContext('2d');
+  const cx = side === 'left' ? canvas.width * 0.2 : canvas.width * 0.8;
+  const cy = canvas.height * 0.45;
+
+  if      (type === 'spin')   fxSpin(ctx, cx, cy + 80, baseColor, canvas);
+  else if (type === 'burst')  fxBurst(ctx, cx, cy, baseColor, canvas);
+  else if (type === 'over')   fxOver(ctx, cx, cy, baseColor, side, canvas);
+  else if (type === 'xtreme') fxXtreme(ctx, cx, cy, canvas);
+}
+
+/* ────────────────────────────────────
+   SPIN : 竜巻（サイバー螺旋）
+──────────────────────────────────── */
+function fxSpin(ctx, cx, cy, color, canvas) {
+  // リング群 + 上昇螺旋パーティクル
+  const TOTAL = 110;
+  const particles = [];
+
+  // 螺旋パーティクル
+  for (let i = 0; i < TOTAL; i++) {
+    const arm   = i % 3; // 3本の螺旋アーム
+    const t     = i / TOTAL;
+    const angle = arm * (Math.PI * 2 / 3) + t * Math.PI * 6;
+    const r0    = 5 + t * 40;
+    particles.push({
+      x: cx + Math.cos(angle) * r0,
+      y: cy + Math.sin(angle) * r0 * 0.3,
+      vx: Math.cos(angle + Math.PI/2) * (2 + Math.random() * 2),
+      vy: -(2 + t * 5 + Math.random() * 2),
+      size: 2 + Math.random() * 3,
+      color,
+      alpha: 1,
+      decay: 0.01 + Math.random() * 0.015,
+      spin: angle,
+      spinSpeed: 0.08 + Math.random() * 0.06,
+      orbitR: r0,
+      orbitY: cy + Math.sin(angle) * r0 * 0.3,
+      rise: 1.5 + Math.random() * 2,
+    });
+  }
+
+  // 中心リング
+  const rings = [
+    { r: 0, maxR: 80,  color, width: 2, alpha: 1 },
+    { r: 0, maxR: 130, color, width: 1, alpha: 0.6 },
+  ];
+
+  let frame = 0;
+  function draw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // リング
+    rings.forEach(rg => {
+      if (rg.alpha <= 0) return;
+      rg.r += (rg.maxR - rg.r) * 0.12;
+      rg.alpha -= 0.018;
+      ctx.save();
+      ctx.globalAlpha = Math.max(0, rg.alpha);
+      ctx.strokeStyle = rg.color;
+      ctx.lineWidth   = rg.width;
+      ctx.shadowColor = rg.color;
+      ctx.shadowBlur  = 18;
+      ctx.beginPath();
+      ctx.ellipse(cx, cy, rg.r, rg.r * 0.35, 0, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.restore();
+    });
+
+    // 螺旋パーティクル
+    particles.forEach(p => {
+      if (p.alpha <= 0) return;
+      p.spin += p.spinSpeed;
+      p.y    -= p.rise;
+      p.x    += p.vx * 0.3;
+      p.alpha -= p.decay;
+      ctx.save();
+      ctx.globalAlpha = Math.max(0, p.alpha);
+      ctx.fillStyle   = p.color;
+      ctx.shadowColor = p.color;
+      ctx.shadowBlur  = 10;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    });
+
+    frame++;
+    if (frame < 100) requestAnimationFrame(draw);
+    else ctx.clearRect(0, 0, canvas.width, canvas.height);
+  }
+  requestAnimationFrame(draw);
+}
+
+/* ────────────────────────────────────
+   BURST : 爆発（衝撃波 + 飛散デブリ）
+──────────────────────────────────── */
+function fxBurst(ctx, cx, cy, color, canvas) {
+  // 衝撃波リング
+  const shockwaves = [
+    { r: 0, speed: 18, alpha: 1, width: 6 },
+    { r: 0, speed: 12, alpha: 0.8, width: 3 },
+    { r: 0, speed: 8,  alpha: 0.5, width: 1.5 },
+  ];
+
+  // デブリ（大きめ・角ばった）
+  const debris = [];
+  for (let i = 0; i < 80; i++) {
+    const angle = Math.random() * Math.PI * 2;
+    const speed = 5 + Math.random() * 14;
+    const isLine = Math.random() < 0.4;
+    debris.push({
+      x: cx, y: cy,
+      vx: Math.cos(angle) * speed,
+      vy: Math.sin(angle) * speed,
+      size: isLine ? (1 + Math.random() * 2) : (3 + Math.random() * 7),
+      len:  isLine ? (10 + Math.random() * 30) : 0,
+      isLine,
+      angle,
+      color: Math.random() < 0.7 ? color : '#ffffff',
+      alpha: 1,
+      decay: 0.014 + Math.random() * 0.02,
+      gravity: 0.25 + Math.random() * 0.2,
+      rotation: Math.random() * Math.PI * 2,
+      rotSpeed: (Math.random() - 0.5) * 0.3,
+    });
+  }
+
+  // 閃光（中心白）
+  let flashAlpha = 1.0;
+
+  let frame = 0;
+  function draw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // 中心閃光
+    if (flashAlpha > 0) {
+      const grd = ctx.createRadialGradient(cx, cy, 0, cx, cy, 60);
+      grd.addColorStop(0, `rgba(255,255,255,${flashAlpha})`);
+      grd.addColorStop(0.5, `${color}${Math.floor(flashAlpha*128).toString(16).padStart(2,'0')}`);
+      grd.addColorStop(1, 'transparent');
+      ctx.fillStyle = grd;
+      ctx.beginPath(); ctx.arc(cx, cy, 60, 0, Math.PI*2); ctx.fill();
+      flashAlpha -= 0.08;
+    }
+
+    // 衝撃波
+    shockwaves.forEach(sw => {
+      if (sw.alpha <= 0) return;
+      sw.r     += sw.speed;
+      sw.alpha -= 0.03;
+      sw.speed *= 0.92;
+      ctx.save();
+      ctx.globalAlpha = Math.max(0, sw.alpha);
+      ctx.strokeStyle = color;
+      ctx.lineWidth   = sw.width;
+      ctx.shadowColor = color;
+      ctx.shadowBlur  = 24;
+      ctx.beginPath(); ctx.arc(cx, cy, sw.r, 0, Math.PI*2); ctx.stroke();
+      ctx.restore();
+    });
+
+    // デブリ
+    debris.forEach(d => {
+      if (d.alpha <= 0) return;
+      d.x += d.vx; d.y += d.vy; d.vy += d.gravity;
+      d.vx *= 0.97; d.alpha -= d.decay; d.rotation += d.rotSpeed;
+      ctx.save();
+      ctx.globalAlpha = Math.max(0, d.alpha);
+      ctx.fillStyle   = d.color;
+      ctx.strokeStyle = d.color;
+      ctx.shadowColor = d.color;
+      ctx.shadowBlur  = 10;
+      ctx.translate(d.x, d.y); ctx.rotate(d.rotation);
+      if (d.isLine) {
+        ctx.lineWidth = d.size;
+        ctx.beginPath(); ctx.moveTo(0, -d.len/2); ctx.lineTo(0, d.len/2); ctx.stroke();
+      } else {
+        ctx.fillRect(-d.size/2, -d.size/2, d.size, d.size);
+      }
+      ctx.restore();
+    });
+
+    frame++;
+    if (frame < 100) requestAnimationFrame(draw);
+    else ctx.clearRect(0, 0, canvas.width, canvas.height);
+  }
+  requestAnimationFrame(draw);
+}
+
+/* ────────────────────────────────────
+   OVER : 突き抜け（縦の光柱 + 飛翔）
+──────────────────────────────────── */
+function fxOver(ctx, cx, cy, color, side, canvas) {
+  const W = canvas.width, H = canvas.height;
+
+  // 縦に貫く光柱（複数本）
+  const pillars = [];
+  const pillarCount = 7;
+  for (let i = 0; i < pillarCount; i++) {
+    const xOffset = (i - Math.floor(pillarCount/2)) * 28;
+    pillars.push({
+      x: cx + xOffset,
+      alpha: 0.9 - Math.abs(xOffset) * 0.006,
+      width: i === Math.floor(pillarCount/2) ? 8 : 3,
+      speed: 18 + Math.random() * 8,
+      y1: cy, y2: cy,       // 上下に伸びる
+      maxUp: -30, maxDown: H + 30,
+      done: false,
+    });
+  }
+
+  // 横切るスキャンライン
+  const scanLines = [];
+  for (let i = 0; i < 5; i++) {
+    scanLines.push({
+      y: cy - 20 + (Math.random() - 0.5) * 60,
+      vy: -(6 + Math.random() * 8),
+      alpha: 1,
+      width: 1 + Math.random(),
+      color: Math.random() < 0.5 ? color : '#ffffff',
+    });
+  }
+
+  // 上昇パーティクル群
+  const particles = [];
+  for (let i = 0; i < 50; i++) {
+    particles.push({
+      x: cx + (Math.random() - 0.5) * 120,
+      y: cy + 30 + Math.random() * 60,
+      vx: (Math.random() - 0.5) * 2,
+      vy: -(6 + Math.random() * 10),
+      size: 1.5 + Math.random() * 3,
+      color,
+      alpha: 1,
+      decay: 0.012 + Math.random() * 0.015,
+    });
+  }
+
+  let frame = 0;
+  function draw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // 光柱
+    pillars.forEach(pl => {
+      if (pl.alpha <= 0) return;
+      pl.y1 = Math.max(pl.maxUp,    pl.y1 - pl.speed);
+      pl.y2 = Math.min(pl.maxDown,  pl.y2 + pl.speed);
+      if (frame > 40) pl.alpha -= 0.04;
+      ctx.save();
+      ctx.globalAlpha = Math.max(0, pl.alpha);
+      const grd = ctx.createLinearGradient(0, pl.y1, 0, pl.y2);
+      grd.addColorStop(0, 'transparent');
+      grd.addColorStop(0.3, color);
+      grd.addColorStop(0.5, '#ffffff');
+      grd.addColorStop(0.7, color);
+      grd.addColorStop(1, 'transparent');
+      ctx.strokeStyle = grd;
+      ctx.lineWidth   = pl.width;
+      ctx.shadowColor = color;
+      ctx.shadowBlur  = 20;
+      ctx.beginPath(); ctx.moveTo(pl.x, pl.y1); ctx.lineTo(pl.x, pl.y2); ctx.stroke();
+      ctx.restore();
+    });
+
+    // スキャンライン
+    scanLines.forEach(sl => {
+      if (sl.alpha <= 0) return;
+      sl.y += sl.vy; sl.vy *= 0.97; sl.alpha -= 0.025;
+      ctx.save();
+      ctx.globalAlpha = Math.max(0, sl.alpha);
+      ctx.strokeStyle = sl.color;
+      ctx.lineWidth   = sl.width;
+      ctx.shadowColor = sl.color;
+      ctx.shadowBlur  = 8;
+      ctx.beginPath(); ctx.moveTo(0, sl.y); ctx.lineTo(W, sl.y); ctx.stroke();
+      ctx.restore();
+    });
+
+    // 上昇パーティクル
+    particles.forEach(p => {
+      if (p.alpha <= 0) return;
+      p.x += p.vx; p.y += p.vy; p.vy *= 0.99; p.alpha -= p.decay;
+      ctx.save();
+      ctx.globalAlpha = Math.max(0, p.alpha);
+      ctx.fillStyle   = p.color;
+      ctx.shadowColor = p.color;
+      ctx.shadowBlur  = 10;
+      ctx.beginPath(); ctx.arc(p.x, p.y, p.size, 0, Math.PI*2); ctx.fill();
+      ctx.restore();
+    });
+
+    frame++;
+    if (frame < 110) requestAnimationFrame(draw);
+    else ctx.clearRect(0, 0, canvas.width, canvas.height);
+  }
+  requestAnimationFrame(draw);
+}
+
+/* ────────────────────────────────────
+   XTREME : 虹色サイバー（全画面レインボー）
+──────────────────────────────────── */
+function fxXtreme(ctx, cx, cy, canvas) {
+  const W = canvas.width, H = canvas.height;
+
+  // 虹色パーティクル（全方向・大量）
+  const particles = [];
+  for (let i = 0; i < 140; i++) {
+    const angle = Math.random() * Math.PI * 2;
+    const speed = 3 + Math.random() * 12;
+    const t     = i / 140;
+    particles.push({
+      x: cx, y: cy,
+      vx: Math.cos(angle) * speed,
+      vy: Math.sin(angle) * speed,
+      size: 2 + Math.random() * 6,
+      colorIdx: t,
+      alpha: 1,
+      decay: 0.01 + Math.random() * 0.018,
+      gravity: 0.08 + Math.random() * 0.1,
+      rotation: Math.random() * Math.PI * 2,
+      rotSpeed: (Math.random() - 0.5) * 0.2,
+      isSquare: Math.random() < 0.4,
+    });
+  }
+
+  // 全画面を走る虹ライン
+  const rainbowLines = [];
+  for (let i = 0; i < RAINBOW.length; i++) {
+    rainbowLines.push({
+      y: -20 + i * 4,
+      vy: 10 + i * 2,
+      alpha: 0.6,
+      color: RAINBOW[i],
+    });
+  }
+
+  // 中心から広がる虹リング
+  const rings = [];
+  for (let i = 0; i < RAINBOW.length; i++) {
+    rings.push({ r: 0, speed: 14 + i * 3, alpha: 0.9, color: RAINBOW[i], width: 3 });
+  }
+
+  let frame = 0;
+  let hueShift = 0;
+
+  function draw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    hueShift += 3;
+
+    // 虹リング
+    rings.forEach(rg => {
+      if (rg.alpha <= 0) return;
+      rg.r    += rg.speed; rg.speed *= 0.93; rg.alpha -= 0.022;
+      ctx.save();
+      ctx.globalAlpha = Math.max(0, rg.alpha);
+      ctx.strokeStyle = rg.color;
+      ctx.lineWidth   = rg.width;
+      ctx.shadowColor = rg.color;
+      ctx.shadowBlur  = 20;
+      ctx.beginPath(); ctx.arc(cx, cy, rg.r, 0, Math.PI*2); ctx.stroke();
+      ctx.restore();
+    });
+
+    // 虹ライン（画面を横断）
+    rainbowLines.forEach(rl => {
+      if (frame > 15 || rl.alpha <= 0) return;
+      ctx.save();
+      ctx.globalAlpha = rl.alpha * (1 - frame/15);
+      ctx.strokeStyle = rl.color;
+      ctx.lineWidth   = 2;
+      ctx.shadowColor = rl.color;
+      ctx.shadowBlur  = 12;
+      ctx.beginPath(); ctx.moveTo(0, rl.y + frame * rl.vy * 0.3); ctx.lineTo(W, rl.y + frame * rl.vy * 0.3); ctx.stroke();
+      ctx.restore();
+    });
+
+    // パーティクル
+    particles.forEach((p, idx) => {
+      if (p.alpha <= 0) return;
+      p.x += p.vx; p.y += p.vy; p.vy += p.gravity;
+      p.vx *= 0.98; p.alpha -= p.decay; p.rotation += p.rotSpeed;
+      // 時間経過で虹色をシフト
+      const col = getRainbowColor((p.colorIdx + frame * 0.01) % 1);
+      ctx.save();
+      ctx.globalAlpha = Math.max(0, p.alpha);
+      ctx.fillStyle   = col;
+      ctx.shadowColor = col;
+      ctx.shadowBlur  = 14;
+      ctx.translate(p.x, p.y); ctx.rotate(p.rotation);
+      if (p.isSquare) {
+        ctx.fillRect(-p.size/2, -p.size/2, p.size, p.size);
+      } else {
+        ctx.beginPath(); ctx.arc(0, 0, p.size, 0, Math.PI*2); ctx.fill();
+      }
+      ctx.restore();
+    });
+
+    frame++;
+    if (frame < 120) requestAnimationFrame(draw);
+    else ctx.clearRect(0, 0, canvas.width, canvas.height);
+  }
+  requestAnimationFrame(draw);
+}
+
+function confirmFinish() {
+  const type = holdBtn.dataset.type; const side = holdBtn.dataset.side;
+  const pts = { spin: 1, burst: 2, over: 2, xtreme: 3 }[type];
+  state.scores[side] += pts;
+  state.history.push({ 
+    round: state.round, winner: side, type, pts, 
+    beys: { left: state.selectedComboIdx.left[state.round], right: state.selectedComboIdx.right[state.round] } 
+  });
+  document.getElementById('score-left').textContent = state.scores.left;
+  document.getElementById('score-right').textContent = state.scores.right;
+  const labelEl = document.getElementById(`label-${side}-${state.round}`);
+  labelEl.textContent = type.toUpperCase();
+  labelEl.classList.remove('label-pop');
+  void labelEl.offsetWidth;
+  labelEl.classList.add('label-pop');
+
+  // 🎆 WIN EFFECT
+  fireWinEffect(side, type);
+
+  // 敗北側のbey-slotをモノクロ化
+  const loseSide = side === 'left' ? 'right' : 'left';
+  const loseSlot = document.getElementById(`slot-${loseSide}-${state.round}`);
+  if (loseSlot) loseSlot.classList.add('defeated');
+
+  if (state.round <= 3) state.round++; updateUI();
+}
+
+function undoBattle() {
+  const currentRound = Math.min(state.round, 3);
+  clearRoundSlots(currentRound);
+  if (state.history.length === 0) { updateUI(); return; }
+  const last = state.history.pop();
+  state.scores[last.winner] -= last.pts;
+  document.getElementById('score-left').textContent = state.scores.left;
+  document.getElementById('score-right').textContent = state.scores.right;
+  document.getElementById(`label-left-${last.round}`).textContent = '';
+  document.getElementById(`label-right-${last.round}`).textContent = '';
+  clearRoundSlots(last.round);
+  state.round = last.round; updateUI();
+}
+
+function clearRoundSlots(r) {
+  ['left', 'right'].forEach(side => {
+    state.selectedComboIdx[side][r] = null;
+    const slot = document.getElementById(`slot-${side}-${r}`);
+    if (slot) { slot.innerHTML = ''; slot.classList.remove('filled', 'defeated'); }
+  });
+}
+
+async function submitData() {
+  const btn = document.getElementById('save-btn');
+  if (!btn.classList.contains('ready') || btn.disabled) return;
+  btn.querySelector('span').textContent = "SAVING..."; btn.disabled = true;
+  try {
+    const matchId = crypto.randomUUID(); const now = new Date().toISOString();
+    const matchRecords = [
+      { match_id: matchId, blader_id: state.players.left.blader_id, score: state.scores.left, result: state.scores.left > state.scores.right ? 'win' : 'lose', side: 'left', time: now },
+      { match_id: matchId, blader_id: state.players.right.blader_id, score: state.scores.right, result: state.scores.right > state.scores.left ? 'win' : 'lose', side: 'right', time: now }
+    ];
+    const battleRecords = [];
+    state.history.forEach(h => {
+      battleRecords.push({
+        battle_id: crypto.randomUUID(), match_id: matchId, round: h.round, finish: h.type,
+        blader_id: state.players.left.blader_id, bey_id: h.beys.left, opponent_id: state.players.right.blader_id, opponent_bey: h.beys.right,
+        point: h.winner === 'left' ? h.pts : -h.pts, time: now
       });
-  });
-
-
-
-  function updateResultList() {
-    const resultList = document.getElementById('resultBattleList');
-    resultList.innerHTML = '';
-
-    if(battleData.length === 0){
-      resultList.innerHTML = '<div style="color:#fff; text-align:center;">データがありません</div>';
-      return;
-    }
-
-    battleData.forEach(item => {
-      const div = document.createElement('div');
-      div.className = 'battleDataItem';
-      div.innerHTML = `
-        <span>${item.blader}</span>
-        <span>${item.score}</span>
-        <span>${item.time}</span>
-      `;
-      resultList.appendChild(div);
+      battleRecords.push({
+        battle_id: crypto.randomUUID(), match_id: matchId, round: h.round, finish: h.type,
+        blader_id: state.players.right.blader_id, bey_id: h.beys.right, opponent_id: state.players.left.blader_id, opponent_bey: h.beys.left,
+        point: h.winner === 'right' ? h.pts : -h.pts, time: now
+      });
     });
+    await sbFetch('CUP_MATCH', 'POST', matchRecords);
+    await sbFetch('CUP_BATTLE', 'POST', battleRecords);
+    setTimeout(() => location.reload(), 500);
+  } catch (e) {
+    toast("SAVE ERROR: " + e.message); btn.disabled = false; btn.querySelector('span').textContent = "確定";
   }
+}
 
-
-  optionOverlay.addEventListener('click', () => {
-    const optionsEl = document.getElementById('battleOptions');
-    optionsEl.classList.add('hidden');
-    optionOverlay.classList.remove('active');
-    openedButton = null;
-  });
-
-  function closeAllSubmenus() {
-    bladerSubmenu?.classList.remove('active');
-    dataSubmenu?.classList.remove('active');
-    resultSubmenu?.classList.remove('active');
-    menuPanel?.classList.remove('active');
-    optionOverlay?.classList.remove('active');
-    openedSubmenu = null;
-  }
-
-
-  window.addEventListener('DOMContentLoaded', () => {
-
-
-  });
-
-
-  window.addEventListener('load', adjustButtonHeights);
-  window.addEventListener('resize', adjustButtonHeights);
+function toast(m) { const t = document.getElementById('toast'); t.textContent = m; t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 2000); }
 </script>
+</body>
 </html>
-
-
-
-
-

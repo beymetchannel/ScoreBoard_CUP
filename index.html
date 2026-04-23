@@ -26,7 +26,22 @@
     width: 100vw; height: 100vh; overflow: hidden; user-select: none;
   }
 
-  #app { width: 100vw; height: 100vh; display: flex; flex-direction: column; }
+  /* ── 強制横向き ── */
+  #rotate-wrapper {
+    position: fixed; inset: 0;
+    width: 100vw; height: 100vh;
+    overflow: hidden;
+  }
+  @media (orientation: portrait) {
+    #rotate-wrapper {
+      width: 100vh;
+      height: 100vw;
+      transform-origin: top left;
+      transform: rotate(90deg) translateY(-100%);
+    }
+  }
+
+  #app { width: 100%; height: 100%; display: flex; flex-direction: column; }
 
   /* HEADER & CUSTOM DROPDOWN */
   .header-grid {
@@ -322,6 +337,7 @@
 </head>
 <body onclick="closeAllDropdowns()">
 
+<div id="rotate-wrapper">
 <div id="app">
   <div class="header-grid">
     <div class="header-item">
@@ -365,7 +381,8 @@
     <button class="finish-btn" data-side="right" data-type="over" onmousedown="startHold(event)" onmouseup="endHold()" ontouchstart="startHold(event)" ontouchend="endHold()" disabled><span class="btn-ja">オーバー</span><span>OVER</span><div class="progress-fill"></div></button>
     <button class="finish-btn" data-side="right" data-type="xtreme" onmousedown="startHold(event)" onmouseup="endHold()" ontouchstart="startHold(event)" ontouchend="endHold()" disabled><span class="btn-ja">エクストリーム</span><span>XTREME</span><div class="progress-fill"></div></button>
   </div>
-</div>
+</div><!-- /#app -->
+</div><!-- /#rotate-wrapper -->
 
 <div id="selection-overlay" onclick="closePicker()"><div class="picker-grid" id="picker-grid" onclick="event.stopPropagation()"></div></div>
 <div id="toast"></div>
@@ -407,6 +424,7 @@ window.onload = async () => {
       sbFetch('CUP_MATCH?select=match_id,blader_id')
     ]);
     allBladers = bladersData || [];
+    allBladers.sort((a, b) => (a.kana || '').localeCompare(b.kana || '', 'ja'));
     allBladers.forEach(b => playedMap[b.blader_id] = new Set());
     const matchGroups = {};
     (matchData || []).forEach(m => {
@@ -451,8 +469,8 @@ function updateDropdowns() {
       // 既存の除外条件：対戦済み
       if(excludeSet && excludeSet.has(b.blader_id)) return;
       
-      // 【追加】ピックアップ条件：'test' IDをリストに含めない
-      if(b.blader_id === 'test') return;
+      // 表示条件：entry=true のみ
+      if(!b.entry) return;
 
       const item = document.createElement('div');
       item.className = 'dropdown-item';

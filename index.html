@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>100戦杯スコアボード v3.7</title>
+<title>100戦杯スコアボード v3.8</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Noto+Sans+JP:wght@400;700&display=swap');
 
@@ -1176,8 +1176,8 @@ async function submitData() {
   try {
     const matchId = crypto.randomUUID(); const now = new Date().toISOString();
     const matchRecords = [
-      { match_id: matchId, blader_id: state.players.left.blader_id, score: state.scores.left, result: state.scores.left > state.scores.right ? 'win' : 'lose', side: 'left', time: now },
-      { match_id: matchId, blader_id: state.players.right.blader_id, score: state.scores.right, result: state.scores.right > state.scores.left ? 'win' : 'lose', side: 'right', time: now }
+      { match_id: matchId, blader_id: state.players.left.blader_id, score: state.scores.left, result: state.scores.left === state.scores.right ? 'draw' : state.scores.left > state.scores.right ? 'win' : 'lose', side: 'left', time: now },
+      { match_id: matchId, blader_id: state.players.right.blader_id, score: state.scores.right, result: state.scores.left === state.scores.right ? 'draw' : state.scores.right > state.scores.left ? 'win' : 'lose', side: 'right', time: now }
     ];
     const battleRecords = [];
     state.history.forEach(h => {
